@@ -1,0 +1,411 @@
+#!/usr/bin/env python3
+"""
+Campaign Prediction API Function
+
+A robust function that loads the pickled multi-output model and makes predictions
+with comprehensive error handling and validation.
+
+Usage:
+    from predict_api import predict_campaign_metrics
+
+    result = predict_campaign_metrics(
+        total_spend=10000.0,
+        platform="TikTok",
+        campaign_type="Flood The Feed",
+        content_type="Influencer - Cfg - Boosted Only"
+    )
+
+    print(result)
+"""
+
+import json
+import joblib
+import numpy as np
+import pandas as pd
+from typing import Dict, Union, Optional
+from pathlib import Path
+import warnings
+warnings.filterwarnings('ignore')
+
+
+class ModelPredictionError(Exception):
+    """Custom exception for model prediction errors."""
+    pass
+
+
+class ValidationError(Exception):
+    """Custom exception for input validation errors."""
+    pass
+
+
+def validate_inputs(
+    total_spend: float,
+    platform: str,
+    campaign_type: str,
+    content_type: str
+) -> None:
+    """
+    Validate all input parameters.
+
+    Args:
+        total_spend: Campaign budget (must be positive)
+        platform: Social media platform
+        campaign_type: Type of campaign strategy
+        content_type: Content classification
+
+    Raises:
+        ValidationError: If any input is invalid
+    """
+    # Validate total_spend
+    if not isinstance(total_spend, (int, float)):
+        raise ValidationError(f"total_spend must be a number, got {type(total_spend).__name__}")
+
+    if total_spend <= 0:
+        raise ValidationError(f"total_spend must be positive, got {total_spend}")
+
+    if total_spend > 1_000_000:
+        raise ValidationError(f"total_spend exceeds maximum allowed (1,000,000), got {total_spend}")
+
+    # Valid categorical values (based on training data)
+    VALID_PLATFORMS = ['Meta', 'TikTok', 'Instagram']
+    VALID_CAMPAIGN_TYPES = ['Bau', 'Mm', 'Flood The Feed']
+    VALID_CONTENT_TYPES = [
+        'Influencer - Cfg - Boosted Only',
+        'Influencer - Ogilvy - Organic Only',
+        'Owned - Boosted Only',
+        'Owned - Organic Only',
+        'Paid - Brand',
+        'Paid - Partnership'
+    ]
+
+    # Validate categorical inputs
+    if platform not in VALID_PLATFORMS:
+        raise ValidationError(
+            f"Invalid platform '{platform}'. Must be one of: {', '.join(VALID_PLATFORMS)}"
+        )
+
+    if campaign_type not in VALID_CAMPAIGN_TYPES:
+        raise ValidationError(
+            f"Invalid campaign_type '{campaign_type}'. Must be one of: {', '.join(VALID_CAMPAIGN_TYPES)}"
+        )
+
+    if content_type not in VALID_CONTENT_TYPES:
+        raise ValidationError(
+            f"Invalid content_type '{content_type}'. Must be one of: {', '.join(VALID_CONTENT_TYPES)}"
+        )
+
+
+def load_model_artifacts(models_dir: str = 'models') -> tuple:
+    """
+    Load the trained model and preprocessor from disk.
+
+    Args:
+        models_dir: Directory containing model files
+
+    Returns:
+        Tuple of (model, preprocessor)
+
+    Raises:
+        ModelPredictionError: If model files cannot be loaded
+    """
+    models_path = Path(models_dir)
+
+    if not models_path.exists():
+        raise ModelPredictionError(f"Models directory not found: {models_dir}")
+
+    model_file = models_path / 'best_multi_output_model_random_forest_multioutput.pkl'
+    preprocessor_file = models_path / 'multi_output_preprocessor.pkl'
+
+    if not model_file.exists():
+        raise ModelPredictionError(f"Model file not found: {model_file}")
+
+    if not preprocessor_file.exists():
+        raise ModelPredictionError(f"Preprocessor file not found: {preprocessor_file}")
+
+    try:
+        model = joblib.load(model_file)
+        preprocessor = joblib.load(preprocessor_file)
+        return model, preprocessor
+    except Exception as e:
+        raise ModelPredictionError(f"Failed to load model artifacts: {str(e)}")
+
+
+def predict_campaign_metrics(
+    total_spend: float,
+    platform: str = "TikTok",
+    campaign_type: str = "Flood The Feed",
+    content_type: str = "Influencer - Cfg - Boosted Only",
+    models_dir: str = "models",
+    return_format: str = "dict"
+) -> Union[Dict, str]:
+    """
+    Predict campaign impressions and engagement metrics.
+
+    Args:
+        total_spend: Campaign budget in dollars (must be > 0)
+        platform: Social media platform - one of ['Meta', 'TikTok', 'Instagram']
+        campaign_type: Campaign strategy - one of ['Bau', 'Mm', 'Flood The Feed']
+        content_type: Content classification - one of:
+            - 'Influencer - Cfg - Boosted Only'
+            - 'Influencer - Ogilvy - Organic Only'
+            - 'Owned - Boosted Only'
+            - 'Owned - Organic Only'
+            - 'Paid - Brand'
+            - 'Paid - Partnership'
+        models_dir: Directory containing model files (default: 'models')
+        return_format: Output format - 'dict' or 'json' (default: 'dict')
+
+    Returns:
+        Dictionary or JSON string containing:
+        {
+            "status": "success",
+            "input": {
+                "total_spend": float,
+                "platform": str,
+                "campaign_type": str,
+                "content_type": str
+            },
+            "predictions": {
+                "impressions": int,
+                "engagement": int,
+                "engagement_rate": float,
+                "engagement_rate_pct": str
+            },
+            "metrics": {
+                "cpm": float,  # Cost per 1000 impressions
+                "cost_per_engagement": float
+            }
+        }
+
+    Raises:
+        ValidationError: If input validation fails
+        ModelPredictionError: If model loading or prediction fails
+
+    Examples:
+        >>> # Basic usage
+        >>> result = predict_campaign_metrics(total_spend=10000.0)
+        >>> print(result['predictions']['impressions'])
+
+        >>> # Custom campaign
+        >>> result = predict_campaign_metrics(
+        ...     total_spend=5000.0,
+        ...     platform="Instagram",
+        ...     campaign_type="Bau",
+        ...     content_type="Paid - Brand"
+        ... )
+
+        >>> # Get JSON output
+        >>> json_result = predict_campaign_metrics(
+        ...     total_spend=10000.0,
+        ...     return_format="json"
+        ... )
+    """
+    try:
+        # Validate inputs
+        validate_inputs(total_spend, platform, campaign_type, content_type)
+
+        # Load model and preprocessor
+        model, preprocessor = load_model_artifacts(models_dir)
+
+        # Prepare input data
+        campaign_data = {
+            'Platform': platform,
+            'campaign_type': campaign_type,
+            'content_type': content_type,
+            'total_spend': total_spend
+        }
+
+        # Create DataFrame
+        campaign_df = pd.DataFrame([campaign_data])
+
+        # Add engineered feature (log transformation)
+        campaign_df['Log_Spend_Total'] = np.log(campaign_df['total_spend'] + 1)
+
+        # Select features in the correct order (must match training)
+        categorical_features = ['Platform', 'campaign_type', 'content_type']
+        numerical_features = ['Log_Spend_Total']
+        X = campaign_df[categorical_features + numerical_features]
+
+        # Preprocess features
+        X_processed = preprocessor.transform(X)
+
+        # Make predictions (returns log-transformed values)
+        predictions_log = model.predict(X_processed)[0]
+
+        # Transform predictions back to original scale
+        impressions_pred = np.expm1(predictions_log[0])
+        engagement_pred = np.expm1(predictions_log[1])
+
+        # Calculate prediction intervals using individual tree predictions (for Random Forest)
+        # This provides confidence intervals based on tree variance
+        impressions_confidence_lower = None
+        impressions_confidence_upper = None
+        engagement_confidence_lower = None
+        engagement_confidence_upper = None
+
+        try:
+            # MultiOutputRegressor wraps individual estimators (one per target)
+            if hasattr(model, 'estimators_'):
+                # For MultiOutputRegressor, each estimator is a RandomForestRegressor
+                # estimators_[0] is for impressions, estimators_[1] is for engagement
+
+                # Get individual tree predictions for impressions
+                impressions_estimator = model.estimators_[0]
+                if hasattr(impressions_estimator, 'estimators_'):
+                    impressions_tree_preds = []
+                    for tree in impressions_estimator.estimators_:
+                        tree_pred_log = tree.predict(X_processed)[0]
+                        impressions_tree_preds.append(np.expm1(tree_pred_log))
+
+                    impressions_std = np.std(impressions_tree_preds)
+                    impressions_confidence_lower = max(0, impressions_pred - 1.96 * impressions_std)
+                    impressions_confidence_upper = impressions_pred + 1.96 * impressions_std
+
+                # Get individual tree predictions for engagement
+                engagement_estimator = model.estimators_[1]
+                if hasattr(engagement_estimator, 'estimators_'):
+                    engagement_tree_preds = []
+                    for tree in engagement_estimator.estimators_:
+                        tree_pred_log = tree.predict(X_processed)[0]
+                        engagement_tree_preds.append(np.expm1(tree_pred_log))
+
+                    engagement_std = np.std(engagement_tree_preds)
+                    engagement_confidence_lower = max(0, engagement_pred - 1.96 * engagement_std)
+                    engagement_confidence_upper = engagement_pred + 1.96 * engagement_std
+        except Exception:
+            # If confidence calculation fails, continue without it
+            pass
+
+        # Calculate derived metrics
+        engagement_rate = engagement_pred / impressions_pred if impressions_pred > 0 else 0
+        cpm = (total_spend / impressions_pred * 1000) if impressions_pred > 0 else 0
+        cost_per_engagement = (total_spend / engagement_pred) if engagement_pred > 0 else 0
+
+        # Prepare response
+        response = {
+            "status": "success",
+            "input": {
+                "total_spend": float(total_spend),
+                "platform": platform,
+                "campaign_type": campaign_type,
+                "content_type": content_type
+            },
+            "predictions": {
+                "impressions": int(round(impressions_pred)),
+                "engagement": int(round(engagement_pred)),
+                "engagement_rate": round(engagement_rate, 4),
+                "engagement_rate_pct": f"{engagement_rate * 100:.2f}%"
+            },
+            "metrics": {
+                "cpm": round(cpm, 2),  # Cost per 1000 impressions
+                "cost_per_engagement": round(cost_per_engagement, 2)
+            }
+        }
+
+        # Add confidence intervals if calculated
+        if impressions_confidence_lower is not None:
+            response["confidence_intervals"] = {
+                "impressions": {
+                    "lower": int(round(impressions_confidence_lower)),
+                    "upper": int(round(impressions_confidence_upper)),
+                    "range": f"{int(round(impressions_confidence_lower)):,} - {int(round(impressions_confidence_upper)):,}"
+                },
+                "engagement": {
+                    "lower": int(round(engagement_confidence_lower)),
+                    "upper": int(round(engagement_confidence_upper)),
+                    "range": f"{int(round(engagement_confidence_lower)):,} - {int(round(engagement_confidence_upper)):,}"
+                },
+                "confidence_level": "95%",
+                "description": "95% confidence interval based on tree variance in Random Forest"
+            }
+
+        # Return in requested format
+        if return_format.lower() == "json":
+            return json.dumps(response, indent=2)
+        else:
+            return response
+
+    except (ValidationError, ModelPredictionError) as e:
+        error_response = {
+            "status": "error",
+            "error_type": type(e).__name__,
+            "error_message": str(e)
+        }
+
+        if return_format.lower() == "json":
+            return json.dumps(error_response, indent=2)
+        else:
+            return error_response
+
+    except Exception as e:
+        error_response = {
+            "status": "error",
+            "error_type": "UnexpectedError",
+            "error_message": f"Unexpected error occurred: {str(e)}"
+        }
+
+        if return_format.lower() == "json":
+            return json.dumps(error_response, indent=2)
+        else:
+            return error_response
+
+
+def main():
+    """Demo function showing various usage examples."""
+
+    print("=" * 80)
+    print("CAMPAIGN PREDICTION API - DEMO")
+    print("=" * 80)
+
+    # Example 1: Basic usage with defaults
+    print("\n[1] Basic prediction with default parameters:")
+    print("-" * 80)
+    result1 = predict_campaign_metrics(total_spend=10000.0)
+    print(json.dumps(result1, indent=2))
+
+    # Example 2: Custom campaign configuration
+    print("\n[2] Custom Instagram campaign:")
+    print("-" * 80)
+    result2 = predict_campaign_metrics(
+        total_spend=5000.0,
+        platform="Instagram",
+        campaign_type="Bau",
+        content_type="Paid - Brand"
+    )
+    print(json.dumps(result2, indent=2))
+
+    # Example 3: JSON output format
+    print("\n[3] JSON output format:")
+    print("-" * 80)
+    result3 = predict_campaign_metrics(
+        total_spend=15000.0,
+        platform="TikTok",
+        content_type="Influencer - Cfg - Boosted Only",
+        return_format="json"
+    )
+    print(result3)
+
+    # Example 4: Error handling - invalid input
+    print("\n[4] Error handling - invalid platform:")
+    print("-" * 80)
+    result4 = predict_campaign_metrics(
+        total_spend=5000.0,
+        platform="YouTube"  # Invalid
+    )
+    print(json.dumps(result4, indent=2))
+
+    # Example 5: Error handling - negative budget
+    print("\n[5] Error handling - negative budget:")
+    print("-" * 80)
+    result5 = predict_campaign_metrics(
+        total_spend=-1000.0  # Invalid
+    )
+    print(json.dumps(result5, indent=2))
+
+    print("\n" + "=" * 80)
+    print("DEMO COMPLETE")
+    print("=" * 80)
+
+
+if __name__ == "__main__":
+    main()

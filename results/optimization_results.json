@@ -1,0 +1,20 @@
+{
+  "user_allocation": {
+    "total_impressions": 1828593.5391625848,
+    "total_engagement": 99360.56031743155,
+    "engagement_rate": 0.05433714939348101
+  },
+  "optimized_allocation": {
+    "n_campaigns": 15,
+    "total_impressions": 7745526.560771992,
+    "total_engagement": 481158.2564424824,
+    "engagement_rate": 0.06212079355319203,
+    "average_cpm": 1359.110551009048,
+    "average_cost_per_engagement": 23.11148394375667
+  },
+  "improvement": {
+    "impressions_gain_pct": 425.5290329659263,
+    "engagement_gain_pct": 469.44031061687366,
+    "engagement_rate_improvement": 0.004540212821948601
+  }
+}

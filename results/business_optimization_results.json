@@ -1,0 +1,121 @@
+{
+  "total_budget": 10000000,
+  "user_allocation": [
+    {
+      "Platform": "TikTok",
+      "campaign_type": "Bau",
+      "content_type": "Paid - Brand",
+      "budget_percentage": 30.0
+    },
+    {
+      "Platform": "Instagram",
+      "campaign_type": "Bau",
+      "content_type": "Paid - Brand",
+      "budget_percentage": 25.0
+    },
+    {
+      "Platform": "Meta",
+      "campaign_type": "Mm",
+      "content_type": "Paid - Partnership",
+      "budget_percentage": 20.0
+    },
+    {
+      "Platform": "TikTok",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 15.0
+    },
+    {
+      "Platform": "Instagram",
+      "campaign_type": "Mm",
+      "content_type": "Owned - Boosted Only",
+      "budget_percentage": 10.0
+    }
+  ],
+  "user_performance": {
+    "total_budget": 10000000.0,
+    "total_impressions": 1828593.5391625848,
+    "total_engagement": 99360.56031743155,
+    "overall_engagement_rate": 0.05433714939348101,
+    "average_cpm": 6447.322587423368,
+    "average_cost_per_engagement": 146.35679834600074
+  },
+  "optimized_allocation": [
+    {
+      "Platform": "TikTok",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 7.835481883945684
+    },
+    {
+      "Platform": "Instagram",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 7.835481883945684
+    },
+    {
+      "Platform": "Meta",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 7.396129969683482
+    },
+    {
+      "Platform": "Meta",
+      "campaign_type": "Mm",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 7.086865957168451
+    },
+    {
+      "Platform": "TikTok",
+      "campaign_type": "Mm",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 6.876771113024896
+    },
+    {
+      "Platform": "Instagram",
+      "campaign_type": "Mm",
+      "content_type": "Influencer - Cfg - Boosted Only",
+      "budget_percentage": 6.876771113024896
+    },
+    {
+      "Platform": "TikTok",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Ogilvy - Boosted Only",
+      "budget_percentage": 6.421375296885391
+    },
+    {
+      "Platform": "Instagram",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Ogilvy - Boosted Only",
+      "budget_percentage": 6.421375296885391
+    },
+    {
+      "Platform": "Meta",
+      "campaign_type": "Mm",
+      "content_type": "Paid - Partnership",
+      "budget_percentage": 6.354956805921376
+    },
+    {
+      "Platform": "Meta",
+      "campaign_type": "Flood The Feed",
+      "content_type": "Influencer - Ogilvy - Boosted Only",
+      "budget_percentage": 6.347592474652762
+    }
+  ],
+  "optimized_performance": {
+    "total_budget": 10000000.0,
+    "total_impressions": 7745526.560771992,
+    "total_engagement": 481158.2564424824,
+    "overall_engagement_rate": 0.06212079355319203,
+    "average_cpm": 1359.110551009048,
+    "average_cost_per_engagement": 23.11148394375667
+  },
+  "improvement": {
+    "impressions_gain": 5916933.021609408,
+    "impressions_gain_percentage": 323.5783619972267,
+    "engagement_gain": 381797.6961250509,
+    "engagement_gain_percentage": 384.25477362980337,
+    "engagement_rate_improvement": 0.0077836441597110145
+  },
+  "recommendation": "optimized"
+}

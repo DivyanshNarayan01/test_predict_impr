@@ -1,0 +1,25 @@
+{
+  "model_name": "Random Forest MultiOutput",
+  "avg_test_r2": 0.2241718812362576,
+  "dataset": {
+    "total_samples": 1000,
+    "training_samples": 800,
+    "testing_samples": 200,
+    "train_test_split": "80/20",
+    "features_count": 4,
+    "target_variables": 2
+  },
+  "impressions": {
+    "test_r2": 0.16544863943158794,
+    "test_mae": 239241.21430630452,
+    "test_rmse": 381646.4062233876,
+    "test_mape": 54.81172575693415
+  },
+  "engagement": {
+    "test_r2": 0.28289512304092723,
+    "test_mae": 17339.235688743505,
+    "test_rmse": 32251.288056003224,
+    "test_mape": 60.33177949537123
+  },
+  "engagement_rate_mape": 27.160594885248095
+}
