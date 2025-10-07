@@ -496,12 +496,12 @@
                 <div class="stat-section">
                     <h4 style="color: #1967d2; font-size: 14px; margin-bottom: 12px; font-weight: 600;">Dataset & Training</h4>
                     <div class="stats-grid">
-                        <div class="stat-item"><strong>Model:</strong> Random Forest MultiOutput</div>
-                        <div class="stat-item"><strong>Total Samples:</strong> 1,000 campaigns</div>
-                        <div class="stat-item"><strong>Training Samples:</strong> 800 (80%)</div>
-                        <div class="stat-item"><strong>Testing Samples:</strong> 200 (20%)</div>
-                        <div class="stat-item"><strong>Input Features:</strong> 4 (Platform, Campaign Type, Content Type, Spend)</div>
-                        <div class="stat-item"><strong>Target Variables:</strong> 2 (Impressions, Engagement)</div>
+                        <div class="stat-item"><strong>Model:</strong> <span id="model-name">Loading...</span></div>
+                        <div class="stat-item"><strong>Total Samples:</strong> <span id="total-samples">Loading...</span></div>
+                        <div class="stat-item"><strong>Training Samples:</strong> <span id="train-samples">Loading...</span></div>
+                        <div class="stat-item"><strong>Testing Samples:</strong> <span id="test-samples">Loading...</span></div>
+                        <div class="stat-item"><strong>Input Features:</strong> <span id="features-count">4</span> (Platform, Campaign Type, Content Type, Spend)</div>
+                        <div class="stat-item"><strong>Target Variables:</strong> <span id="targets-count">2</span> (Impressions, Engagement)</div>
                     </div>
                 </div>
 
@@ -509,11 +509,11 @@
                 <div class="stat-section">
                     <h4 style="color: #1967d2; font-size: 14px; margin-bottom: 12px; margin-top: 20px; font-weight: 600;">Model Performance (Test Set)</h4>
                     <div class="stats-grid">
-                        <div class="stat-item"><strong>Average R² Score:</strong> 0.224</div>
-                        <div class="stat-item"><strong>Impressions R²:</strong> 0.165</div>
-                        <div class="stat-item"><strong>Engagement R²:</strong> 0.283</div>
-                        <div class="stat-item"><strong>Impressions MAPE:</strong> 54.81%</div>
-                        <div class="stat-item"><strong>Engagement MAPE:</strong> 60.33%</div>
+                        <div class="stat-item"><strong>Average R² Score:</strong> <span id="avg-r2">Loading...</span></div>
+                        <div class="stat-item"><strong>Impressions R²:</strong> <span id="impressions-r2">Loading...</span></div>
+                        <div class="stat-item"><strong>Engagement R²:</strong> <span id="engagement-r2">Loading...</span></div>
+                        <div class="stat-item"><strong>Impressions MAPE:</strong> <span id="impressions-mape">Loading...</span></div>
+                        <div class="stat-item"><strong>Engagement MAPE:</strong> <span id="engagement-mape">Loading...</span></div>
                     </div>
                 </div>
 
@@ -854,10 +854,43 @@
             }
         });
 
+        // Load model information from API
+        async function loadModelInfo() {
+            try {
+                const response = await fetch('/api/model-info');
+                const data = await response.json();
+
+                if (data.status === 'success' && data.model_info) {
+                    const info = data.model_info;
+
+                    // Update dataset information
+                    document.getElementById('model-name').textContent = info.model_name || 'Unknown';
+                    document.getElementById('total-samples').textContent = `${info.dataset?.total_samples || 0} campaigns`;
+                    document.getElementById('train-samples').textContent = `${info.dataset?.training_samples || 0} (${info.dataset?.train_test_split?.split('/')[0] || '80'}%)`;
+                    document.getElementById('test-samples').textContent = `${info.dataset?.testing_samples || 0} (${info.dataset?.train_test_split?.split('/')[1] || '20'}%)`;
+                    document.getElementById('features-count').textContent = info.dataset?.features_count || 4;
+                    document.getElementById('targets-count').textContent = info.dataset?.target_variables || 2;
+
+                    // Update model performance
+                    document.getElementById('avg-r2').textContent = (info.avg_test_r2 || 0).toFixed(3);
+                    document.getElementById('impressions-r2').textContent = (info.impressions?.test_r2 || 0).toFixed(3);
+                    document.getElementById('engagement-r2').textContent = (info.engagement?.test_r2 || 0).toFixed(3);
+                    document.getElementById('impressions-mape').textContent = `${(info.impressions?.test_mape || 0).toFixed(2)}%`;
+                    document.getElementById('engagement-mape').textContent = `${(info.engagement?.test_mape || 0).toFixed(2)}%`;
+                } else {
+                    console.error('Failed to load model info:', data);
+                }
+            } catch (error) {
+                console.error('Error fetching model info:', error);
+                // Keep "Loading..." text on error
+            }
+        }
+
         // Initialize with empty state
         window.onload = function() {
             updateEmptyState();
             updateTotals();
+            loadModelInfo();
         };
     </script>
 </body>

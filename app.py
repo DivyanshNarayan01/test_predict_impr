@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify, render_template
 from predict_api import predict_campaign_metrics
 import logging
 import os
+import json
 
 # Get the absolute path of the current file's directory
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -94,13 +95,50 @@ def get_options():
     }), 200
 
 
+@app.route('/api/model-info', methods=['GET'])
+def get_model_info():
+    """Get model information and statistics from metadata file."""
+    try:
+        metadata_file = os.path.join(BASE_DIR, 'models', 'multi_output_model_metadata.json')
+
+        if not os.path.exists(metadata_file):
+            return jsonify({
+                "status": "error",
+                "error_message": "Model metadata file not found"
+            }), 404
+
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+
+        return jsonify({
+            "status": "success",
+            "model_info": metadata
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error loading model metadata: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "error_message": f"Failed to load model metadata: {str(e)}"
+        }), 500
+
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
+    try:
+        # Try to load metadata to get actual model name
+        metadata_file = os.path.join(BASE_DIR, 'models', 'multi_output_model_metadata.json')
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+        model_name = metadata.get('model_name', 'Unknown')
+    except:
+        model_name = 'Unknown'
+
     return jsonify({
         "status": "healthy",
         "service": "campaign-prediction-api",
-        "model": "Random Forest MultiOutput"
+        "model": model_name
     }), 200
 
 

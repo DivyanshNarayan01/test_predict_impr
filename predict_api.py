@@ -158,11 +158,20 @@ def load_model_artifacts(models_dir: str = 'models') -> tuple:
     if not models_path.exists():
         raise ModelPredictionError(f"Models directory not found: {models_dir}")
 
-    model_file = models_path / 'best_multi_output_model_random_forest_multioutput.pkl'
+    # Auto-detect the best model file (supports any model type: random_forest, xgboost, lightgbm)
+    model_files = list(models_path.glob('best_multi_output_model_*.pkl'))
+
+    if not model_files:
+        raise ModelPredictionError(f"No model file found matching pattern 'best_multi_output_model_*.pkl' in {models_dir}")
+
+    if len(model_files) > 1:
+        # If multiple models exist, prioritize based on metadata or use first one
+        print(f"Warning: Multiple model files found: {[f.name for f in model_files]}. Using first one.")
+
+    model_file = model_files[0]
     metadata_file = models_path / 'multi_output_model_metadata.json'
 
-    if not model_file.exists():
-        raise ModelPredictionError(f"Model file not found: {model_file}")
+    print(f"Loading model: {model_file.name}")
 
     if not metadata_file.exists():
         raise ModelPredictionError(f"Metadata file not found: {metadata_file}")
