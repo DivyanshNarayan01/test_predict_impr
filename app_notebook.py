@@ -72,48 +72,48 @@ The flow is:
 # =============================================================================
 # CELL 1: Import Required Libraries
 # =============================================================================
-# 📦 What this cell does:
+#  What this cell does:
 #   - Imports Flask (the web server framework)
 #   - Imports our prediction function from predict_api.py
 #   - Sets up logging (to track what happens)
 #
-# 📚 What each library does:
+#  What each library does:
 #   - Flask: Creates the web server
 #   - request: Handles incoming HTTP requests (GET, POST)
 #   - jsonify: Converts Python dictionaries to JSON (for API responses)
 #   - render_template: Loads HTML templates
 #   - logging: Tracks events and errors
 #
-# ⏱️  Run time: <1 second
-# ✅ Expected output: No output (libraries load silently)
+# ⏱  Run time: <1 second
+#  Expected output: No output (libraries load silently)
 
 from flask import Flask, request, jsonify, render_template
 from predict_api import predict_campaign_metrics
 import logging
 
-print("✅ Flask and dependencies imported successfully!")
+print(" Flask and dependencies imported successfully!")
 
 
 # =============================================================================
 # CELL 2: Initialize Flask Application
 # =============================================================================
-# 🚀 What this cell does:
+#  What this cell does:
 #   - Creates a Flask application instance
 #   - Sets up logging to track requests and errors
 #
-# 💡 What Flask does:
+#  What Flask does:
 #   - Flask is like a "receptionist" for your website
 #   - It listens for incoming requests (users visiting pages)
 #   - Routes requests to the right function
 #   - Returns responses (HTML pages or JSON data)
 #
-# 🔍 What logging does:
+#  What logging does:
 #   - Tracks every request: "User predicted a $10,000 campaign"
 #   - Records errors: "Model file not found!"
 #   - Helps debug issues in production
 #
-# ⏱️  Run time: <1 second
-# ✅ Expected output: "Flask app initialized!"
+# ⏱  Run time: <1 second
+#  Expected output: "Flask app initialized!"
 
 # Create the Flask application
 # __name__ tells Flask where to find templates and static files
@@ -124,7 +124,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-print("✅ Flask app initialized!")
+print(" Flask app initialized!")
 print("   App name:", app.name)
 print("   Debug mode:", app.debug)
 
@@ -132,23 +132,23 @@ print("   Debug mode:", app.debug)
 # =============================================================================
 # CELL 3: Home Page Route - Serve the Web Interface
 # =============================================================================
-# 🏠 What this cell does:
+#  What this cell does:
 #   - Defines the HOME PAGE route (the main page users see)
 #   - When someone visits http://localhost:5000/, show them the UI
 #
-# 🌐 Web Terminology:
+#  Web Terminology:
 #   - ROUTE: A URL path like "/" or "/about"
 #   - GET Request: User visits a page (browser asks "give me this page")
 #   - POST Request: User submits a form (browser sends data to server)
 #   - Template: HTML file that defines what the page looks like
 #
-# 📝 How routing works:
+#  How routing works:
 #   @app.route('/') means "when user visits the homepage..."
 #   def home() means "...run this function"
 #   return render_template() means "...and show them this HTML page"
 #
-# ⏱️  Run time: Instant (just defines the route, doesn't run yet)
-# ✅ Expected output: "Home route defined!"
+# ⏱  Run time: Instant (just defines the route, doesn't run yet)
+#  Expected output: "Home route defined!"
 
 @app.route('/')
 def home():
@@ -172,25 +172,25 @@ def home():
     # and returns it to the user's browser
     return render_template('index.html')
 
-print("✅ Home route defined: GET /")
+print(" Home route defined: GET /")
 
 
 # =============================================================================
 # CELL 4: Prediction API Endpoint - The Core Business Logic
 # =============================================================================
-# 🔮 What this cell does:
+#  What this cell does:
 #   - Defines the PREDICTION API endpoint
 #   - Accepts campaign details via POST request (JSON format)
 #   - Makes predictions using the AI model
 #   - Returns results as JSON
 #
-# 🌐 API Terminology:
+#  API Terminology:
 #   - API (Application Programming Interface): A way for programs to talk
 #   - REST API: Uses HTTP methods (GET, POST) with JSON data
 #   - Endpoint: A specific URL that does something (like /api/predict)
 #   - JSON: Text format for structured data {"key": "value"}
 #
-# 📊 Request/Response Flow:
+#  Request/Response Flow:
 #   1. User's browser sends POST to /api/predict with campaign details
 #   2. Flask receives the request
 #   3. We extract the data (total_spend, platform, etc.)
@@ -199,14 +199,14 @@ print("✅ Home route defined: GET /")
 #   6. We return predictions as JSON
 #   7. User's browser displays the results
 #
-# 🛡️ Error Handling:
+#  Error Handling:
 #   - Missing JSON body? → Return error "Request body must be JSON"
 #   - Missing total_spend? → Return error "Missing required field"
 #   - Invalid platform? → predict_api.py validates and returns error
 #   - Server crash? → Return error "Internal server error"
 #
-# ⏱️  Run time: Instant (just defines the route, doesn't run yet)
-# ✅ Expected output: "Prediction route defined!"
+# ⏱  Run time: Instant (just defines the route, doesn't run yet)
+#  Expected output: "Prediction route defined!"
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
@@ -352,27 +352,27 @@ def predict():
             "error_message": f"Internal server error: {str(e)}"
         }), 500  # 500 = Internal Server Error
 
-print("✅ Prediction route defined: POST /api/predict")
+print(" Prediction route defined: POST /api/predict")
 
 
 # =============================================================================
 # CELL 5: Options API Endpoint - Get Valid Dropdown Values
 # =============================================================================
-# 📋 What this cell does:
+#  What this cell does:
 #   - Returns the list of valid options for dropdown menus
 #   - Used by the frontend to populate dropdown fields
 #
-# 💡 Why this is useful:
+#  Why this is useful:
 #   - Frontend doesn't need to hardcode options
 #   - If we add new platforms, we just update this endpoint
 #   - Single source of truth for valid values
 #
-# 🌐 API Usage:
+#  API Usage:
 #   GET http://localhost:5000/api/options
 #   Returns: {"platforms": [...], "campaign_types": [...], "content_types": [...]}
 #
-# ⏱️  Run time: Instant (just defines the route)
-# ✅ Expected output: "Options route defined!"
+# ⏱  Run time: Instant (just defines the route)
+#  Expected output: "Options route defined!"
 
 @app.route('/api/options', methods=['GET'])
 def get_options():
@@ -418,27 +418,27 @@ def get_options():
         ]
     }), 200
 
-print("✅ Options route defined: GET /api/options")
+print(" Options route defined: GET /api/options")
 
 
 # =============================================================================
 # CELL 6: Health Check Endpoint - Monitor Server Status
 # =============================================================================
-# 🏥 What this cell does:
+#  What this cell does:
 #   - Provides a simple "health check" endpoint
 #   - Used to verify the server is running
 #
-# 💡 Why this is important:
+#  Why this is important:
 #   - In production, monitoring tools ping /health every minute
 #   - If /health doesn't respond, alert the team "server is down!"
 #   - Helps detect issues before users notice
 #
-# 🌐 API Usage:
+#  API Usage:
 #   GET http://localhost:5000/health
 #   Returns: {"status": "healthy", "service": "campaign-prediction-api", ...}
 #
-# ⏱️  Run time: Instant (just defines the route)
-# ✅ Expected output: "Health check route defined!"
+# ⏱  Run time: Instant (just defines the route)
+#  Expected output: "Health check route defined!"
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -466,34 +466,34 @@ def health_check():
         "model": "Random Forest MultiOutput"
     }), 200
 
-print("✅ Health check route defined: GET /health")
+print(" Health check route defined: GET /health")
 
 
 # =============================================================================
 # CELL 7: Start the Flask Development Server
 # =============================================================================
-# 🚀 What this cell does:
+#  What this cell does:
 #   - Starts the Flask web server
 #   - Makes the app accessible at http://localhost:5000
 #   - Prints instructions for the user
 #
-# ⚙️ Server Configuration:
+#  Server Configuration:
 #   - host='0.0.0.0': Listen on all network interfaces
 #                     (allows access from other computers on your network)
 #   - port=5000: Use port 5000 (default for Flask)
 #   - debug=True: Enable debug mode (auto-reload on code changes, detailed errors)
 #
-# 🔧 Debug Mode Benefits:
+#  Debug Mode Benefits:
 #   - Auto-reloads when you save code changes (no need to restart server)
 #   - Shows detailed error pages (helps debugging)
 #   - Includes debugger in browser (can inspect variables)
 #
-# ⚠️  IMPORTANT - Debug Mode Warning:
+#   IMPORTANT - Debug Mode Warning:
 #   NEVER use debug=True in production! It exposes security vulnerabilities.
 #   For production, use: gunicorn -w 4 app:app
 #
-# ⏱️  Run time: Runs forever (until you stop it with Ctrl+C)
-# ✅ Expected output: Server startup message and logs
+# ⏱  Run time: Runs forever (until you stop it with Ctrl+C)
+#  Expected output: Server startup message and logs
 
 def start_server():
     """
@@ -517,18 +517,18 @@ def start_server():
 
     # Print welcome message
     print("=" * 80)
-    print("🚀 CAMPAIGN PREDICTION WEB SERVER STARTING...")
+    print(" CAMPAIGN PREDICTION WEB SERVER STARTING...")
     print("=" * 80)
     print()
-    print("✅ Server will start on: http://localhost:5000")
+    print(" Server will start on: http://localhost:5000")
     print()
-    print("📋 Available Routes:")
-    print("   🏠 Web Interface:    http://localhost:5000/")
-    print("   🔮 Prediction API:   http://localhost:5000/api/predict  (POST)")
-    print("   📋 Options API:      http://localhost:5000/api/options  (GET)")
-    print("   🏥 Health Check:     http://localhost:5000/health       (GET)")
+    print(" Available Routes:")
+    print("    Web Interface:    http://localhost:5000/")
+    print("    Prediction API:   http://localhost:5000/api/predict  (POST)")
+    print("    Options API:      http://localhost:5000/api/options  (GET)")
+    print("    Health Check:     http://localhost:5000/health       (GET)")
     print()
-    print("💡 Tips:")
+    print(" Tips:")
     print("   - Open the Web Interface URL in your browser to see the UI")
     print("   - Press Ctrl+C to stop the server")
     print("   - Debug mode is ON (auto-reloads on code changes)")
@@ -544,37 +544,37 @@ def start_server():
         debug=True          # Enable debug mode (auto-reload, detailed errors)
     )
 
-print("✅ Server start function defined!")
+print(" Server start function defined!")
 
 
 # =============================================================================
 # CELL 8: Run the Server (Execute This!)
 # =============================================================================
-# ▶️  What this cell does:
+#   What this cell does:
 #   - Checks if this file is being run directly (not imported)
 #   - If yes, starts the Flask server
 #
-# 💡 What if __name__ == '__main__' means:
+#  What if __name__ == '__main__' means:
 #   - When you run: python3 app.py → __name__ is '__main__' → server starts
 #   - When you import: from app import app → __name__ is 'app' → server doesn't start
 #   - This prevents the server from starting when you just want to import functions
 #
-# ⏱️  Run time: Runs forever (web server loop)
-# ✅ Expected output: Server startup logs, then waits for requests
+# ⏱  Run time: Runs forever (web server loop)
+#  Expected output: Server startup logs, then waits for requests
 
 # Only run the server if this file is executed directly
 # (not when imported as a module)
 if __name__ == '__main__':
     start_server()
 else:
-    print("✅ Flask app loaded (not running server yet)")
+    print(" Flask app loaded (not running server yet)")
     print("   To start server, run: start_server()")
 
 print("\n" + "=" * 80)
-print("🎉 FLASK APPLICATION READY!")
+print(" FLASK APPLICATION READY!")
 print("=" * 80)
 print()
-print("📚 NEXT STEPS:")
+print(" NEXT STEPS:")
 print("   1. Run all cells in order")
 print("   2. Execute the final cell to start the server")
 print("   3. Open http://localhost:5000 in your browser")

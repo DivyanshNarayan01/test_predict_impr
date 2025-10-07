@@ -51,17 +51,17 @@ warnings.filterwarnings('ignore')
 try:
     import xgboost as xgb
     XGBOOST_AVAILABLE = True
-    print("✅ XGBoost available")
+    print(" XGBoost available")
 except ImportError:
-    print("⚠️  XGBoost not installed. Install with: pip install xgboost")
+    print("  XGBoost not installed. Install with: pip install xgboost")
     XGBOOST_AVAILABLE = False
 
 try:
     import lightgbm as lgb
     LIGHTGBM_AVAILABLE = True
-    print("✅ LightGBM available")
+    print(" LightGBM available")
 except ImportError:
-    print("⚠️  LightGBM not installed. Install with: pip install lightgbm")
+    print("  LightGBM not installed. Install with: pip install lightgbm")
     LIGHTGBM_AVAILABLE = False
 
 # Configure pandas and matplotlib display settings
@@ -69,8 +69,8 @@ pd.set_option('display.max_columns', None)  # Show all columns in tables
 plt.style.use('default')
 sns.set_palette('husl')  # Use colorful palette for charts
 
-print("\n✅ All libraries imported successfully!")
-print(f"📦 Available models: Random Forest, XGBoost={XGBOOST_AVAILABLE}, LightGBM={LIGHTGBM_AVAILABLE}")
+print("\n All libraries imported successfully!")
+print(f" Available models: Random Forest, XGBoost={XGBOOST_AVAILABLE}, LightGBM={LIGHTGBM_AVAILABLE}")
 
 # =============================================================================
 # CELL 2: Load and Validate Dataset
@@ -90,18 +90,18 @@ print("=" * 80)
 
 print("\n[STEP 1/6] Loading dataset...")
 df = pd.read_csv('data/campaign_data.csv')
-print(f"✅ Dataset loaded: {df.shape[0]} rows, {df.shape[1]} columns")
-print(f"\n📋 Columns: {list(df.columns)}")
-print(f"\n👀 First few rows:")
+print(f" Dataset loaded: {df.shape[0]} rows, {df.shape[1]} columns")
+print(f"\n Columns: {list(df.columns)}")
+print(f"\n First few rows:")
 print(df.head())
 
 # Validate that all required columns are present
 required_columns = ['campaign_type', 'Platform', 'content_type', 'total_spend', 'Impressions', 'Engagement']
 missing_columns = set(required_columns) - set(df.columns)
 if missing_columns:
-    raise ValueError(f"❌ Missing required columns: {missing_columns}. Please regenerate data with: python3 generate_dummy_data.py")
+    raise ValueError(f" Missing required columns: {missing_columns}. Please regenerate data with: python3 generate_dummy_data.py")
 else:
-    print(f"\n✅ All required columns present: {required_columns}")
+    print(f"\n All required columns present: {required_columns}")
 
 # Data type validation and cleaning
 print("\n[2/6] Data type validation and cleaning...")
@@ -336,7 +336,7 @@ def print_multi_output_results(metrics):
     print(f"{metrics['model_name']} - MULTI-OUTPUT RESULTS")
     print(f"{'=' * 70}")
 
-    print(f"\n📊 IMPRESSIONS METRICS:")
+    print(f"\n IMPRESSIONS METRICS:")
     imp = metrics['impressions']
     print(f"  Training R²:   {imp['train_r2']:.4f}")
     print(f"  Test R²:       {imp['test_r2']:.4f}")
@@ -345,7 +345,7 @@ def print_multi_output_results(metrics):
     print(f"  Test MAPE:     {imp['test_mape']:.2f}%")
     print(f"  Overfitting:   {abs(imp['train_r2'] - imp['test_r2']):.4f}")
 
-    print(f"\n💬 ENGAGEMENT METRICS:")
+    print(f"\n ENGAGEMENT METRICS:")
     eng = metrics['engagement']
     print(f"  Training R²:   {eng['train_r2']:.4f}")
     print(f"  Test R²:       {eng['test_r2']:.4f}")
@@ -354,12 +354,12 @@ def print_multi_output_results(metrics):
     print(f"  Test MAPE:     {eng['test_mape']:.2f}%")
     print(f"  Overfitting:   {abs(eng['train_r2'] - eng['test_r2']):.4f}")
 
-    print(f"\n📈 ENGAGEMENT RATE ACCURACY:")
+    print(f"\n ENGAGEMENT RATE ACCURACY:")
     print(f"  MAPE:          {metrics['engagement_rate_mape']:.2f}%")
 
     # Overall score (average of both R² scores)
     avg_r2 = (imp['test_r2'] + eng['test_r2']) / 2
-    print(f"\n⭐ OVERALL SCORE (Avg Test R²): {avg_r2:.4f}")
+    print(f"\n OVERALL SCORE (Avg Test R²): {avg_r2:.4f}")
 
 # Train models
 all_results = []
@@ -575,13 +575,13 @@ print(f"Model metadata saved to 'models/multi_output_model_metadata.json'")
 print("\n" + "=" * 80)
 print("MULTI-OUTPUT PIPELINE COMPLETE!")
 print("=" * 80)
-print(f"\n⭐ Best Model: {best_model_name}")
-print(f"📊 Impressions - Test R²: {best_metrics['impressions']['test_r2']:.4f}, MAE: {best_metrics['impressions']['test_mae']:,.0f}")
-print(f"💬 Engagement - Test R²: {best_metrics['engagement']['test_r2']:.4f}, MAE: {best_metrics['engagement']['test_mae']:,.0f}")
-print(f"📈 Engagement Rate MAPE: {best_metrics['engagement_rate_mape']:.2f}%")
-print(f"🎯 Average Test R²: {best_avg_r2:.4f}")
+print(f"\n Best Model: {best_model_name}")
+print(f" Impressions - Test R²: {best_metrics['impressions']['test_r2']:.4f}, MAE: {best_metrics['impressions']['test_mae']:,.0f}")
+print(f" Engagement - Test R²: {best_metrics['engagement']['test_r2']:.4f}, MAE: {best_metrics['engagement']['test_mae']:,.0f}")
+print(f" Engagement Rate MAPE: {best_metrics['engagement_rate_mape']:.2f}%")
+print(f" Average Test R²: {best_avg_r2:.4f}")
 
-print("\n✅ Files Generated:")
+print("\n Files Generated:")
 print("  - results/multi_output_target_distributions.png")
 print("  - results/multi_output_model_comparison.png")
 print("  - results/multi_output_model_comparison.csv")

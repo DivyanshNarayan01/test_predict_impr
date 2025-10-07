@@ -52,19 +52,19 @@ campaigns.
 # =============================================================================
 # CELL 1: Import Required Libraries
 # =============================================================================
-# 📦 What this cell does:
+#  What this cell does:
 #   - Imports Python libraries needed for predictions
 #   - These are like "toolboxes" that provide ready-made functions
 #
-# 📚 What each library does:
+#  What each library does:
 #   - json: Handles data in JSON format (like structured text)
 #   - joblib: Loads the saved AI model from disk
 #   - numpy: Does math operations on numbers and arrays
 #   - pandas: Works with data tables (like Excel spreadsheets)
 #   - pathlib: Handles file paths on your computer
 #
-# ⏱️  Run time: <1 second
-# ✅ Expected output: No output (libraries load silently)
+# ⏱  Run time: <1 second
+#  Expected output: No output (libraries load silently)
 
 import json
 import joblib
@@ -77,23 +77,23 @@ import warnings
 # Hide warning messages to keep output clean
 warnings.filterwarnings('ignore')
 
-print("✅ All libraries imported successfully!")
+print(" All libraries imported successfully!")
 
 
 # =============================================================================
 # CELL 2: Define Custom Error Types
 # =============================================================================
-# 🚨 What this cell does:
+#  What this cell does:
 #   - Creates special types of errors for different problems
 #   - Helps us identify exactly what went wrong if something fails
 #
-# 💡 Why this matters:
+#  Why this matters:
 #   - If the model file is missing, we get a "ModelPredictionError"
 #   - If you enter invalid data (like negative budget), we get a "ValidationError"
 #   - This makes debugging much easier than generic "Error" messages
 #
-# ⏱️  Run time: <1 second
-# ✅ Expected output: No output (just defines error types)
+# ⏱  Run time: <1 second
+#  Expected output: No output (just defines error types)
 
 class ModelPredictionError(Exception):
     """
@@ -118,17 +118,17 @@ class ValidationError(Exception):
     """
     pass
 
-print("✅ Custom error types defined!")
+print(" Custom error types defined!")
 
 
 # =============================================================================
 # CELL 3: Input Validation Function
 # =============================================================================
-# ✅ What this cell does:
+#  What this cell does:
 #   - Checks if your campaign inputs are valid before making predictions
 #   - Like a "bouncer" at a club - only lets valid data through
 #
-# 🔍 What it validates:
+#  What it validates:
 #   1. BUDGET (total_spend):
 #      - Must be a number (not text)
 #      - Must be positive (can't spend -$100!)
@@ -144,8 +144,8 @@ print("✅ Custom error types defined!")
 #   4. CONTENT TYPE:
 #      - Must be one of 6 valid types (see list below)
 #
-# ⏱️  Run time: <1 second
-# ✅ Expected output: No output if valid, raises error if invalid
+# ⏱  Run time: <1 second
+#  Expected output: No output if valid, raises error if invalid
 
 def validate_inputs(
     total_spend: float,
@@ -176,19 +176,19 @@ def validate_inputs(
     # Check if total_spend is a number (not text like "ten thousand")
     if not isinstance(total_spend, (int, float)):
         raise ValidationError(
-            f"❌ Budget must be a number, but you gave: {type(total_spend).__name__}"
+            f" Budget must be a number, but you gave: {type(total_spend).__name__}"
         )
 
     # Check if budget is positive (can't spend $0 or negative money)
     if total_spend <= 0:
         raise ValidationError(
-            f"❌ Budget must be positive, but you gave: ${total_spend:,.2f}"
+            f" Budget must be positive, but you gave: ${total_spend:,.2f}"
         )
 
     # Check if budget is under $1 million (our model's maximum)
     if total_spend > 1_000_000:
         raise ValidationError(
-            f"❌ Budget exceeds maximum of $1,000,000. You gave: ${total_spend:,.2f}"
+            f" Budget exceeds maximum of $1,000,000. You gave: ${total_spend:,.2f}"
         )
 
     # ===========================
@@ -217,7 +217,7 @@ def validate_inputs(
 
     if platform not in VALID_PLATFORMS:
         raise ValidationError(
-            f"❌ Invalid platform '{platform}'. Must be one of: {', '.join(VALID_PLATFORMS)}\n"
+            f" Invalid platform '{platform}'. Must be one of: {', '.join(VALID_PLATFORMS)}\n"
             f"   (Note: Platform names are case-sensitive!)"
         )
 
@@ -227,7 +227,7 @@ def validate_inputs(
 
     if campaign_type not in VALID_CAMPAIGN_TYPES:
         raise ValidationError(
-            f"❌ Invalid campaign type '{campaign_type}'. Must be one of: {', '.join(VALID_CAMPAIGN_TYPES)}"
+            f" Invalid campaign type '{campaign_type}'. Must be one of: {', '.join(VALID_CAMPAIGN_TYPES)}"
         )
 
     # ===========================
@@ -236,14 +236,14 @@ def validate_inputs(
 
     if content_type not in VALID_CONTENT_TYPES:
         raise ValidationError(
-            f"❌ Invalid content type '{content_type}'.\n"
+            f" Invalid content type '{content_type}'.\n"
             f"   Must be one of:\n" +
             '\n'.join([f"     - {ct}" for ct in VALID_CONTENT_TYPES])
         )
 
-    # If we get here, all inputs are valid! ✅
+    # If we get here, all inputs are valid! 
 
-print("✅ Input validation function defined!")
+print(" Input validation function defined!")
 
 
 # =============================================================================
@@ -253,17 +253,17 @@ print("✅ Input validation function defined!")
 #   - Loads the trained AI model from disk (like opening a saved game)
 #   - Also loads the "preprocessor" (prepares data for the model)
 #
-# 📂 What files it looks for:
+#  What files it looks for:
 #   - models/best_multi_output_model_random_forest_multioutput.pkl (the AI brain)
 #   - models/multi_output_preprocessor.pkl (the data preparation tool)
 #
-# 💡 Why we need both:
+#  Why we need both:
 #   - The MODEL makes predictions
 #   - The PREPROCESSOR converts your inputs into the format the model expects
 #   - Like a translator: you speak English, the model speaks "numbers"
 #
-# ⏱️  Run time: 1-2 seconds (loading from disk)
-# ✅ Expected output: No output if successful, error if files missing
+# ⏱  Run time: 1-2 seconds (loading from disk)
+#  Expected output: No output if successful, error if files missing
 
 def load_model_artifacts(models_dir: str = 'models') -> tuple:
     """
@@ -294,7 +294,7 @@ def load_model_artifacts(models_dir: str = 'models') -> tuple:
 
     if not models_path.exists():
         raise ModelPredictionError(
-            f"❌ Models folder not found: {models_dir}\n"
+            f" Models folder not found: {models_dir}\n"
             f"   Did you run the training script first? (multi_output_training.py)"
         )
 
@@ -314,13 +314,13 @@ def load_model_artifacts(models_dir: str = 'models') -> tuple:
 
     if not model_file.exists():
         raise ModelPredictionError(
-            f"❌ Model file not found: {model_file}\n"
+            f" Model file not found: {model_file}\n"
             f"   Train the model first by running: python3 multi_output_training.py"
         )
 
     if not preprocessor_file.exists():
         raise ModelPredictionError(
-            f"❌ Preprocessor file not found: {preprocessor_file}\n"
+            f" Preprocessor file not found: {preprocessor_file}\n"
             f"   Train the model first by running: python3 multi_output_training.py"
         )
 
@@ -339,21 +339,21 @@ def load_model_artifacts(models_dir: str = 'models') -> tuple:
 
     except Exception as e:
         raise ModelPredictionError(
-            f"❌ Failed to load model files. They may be corrupted.\n"
+            f" Failed to load model files. They may be corrupted.\n"
             f"   Error details: {str(e)}"
         )
 
-print("✅ Model loading function defined!")
+print(" Model loading function defined!")
 
 
 # =============================================================================
 # CELL 5: Main Prediction Function (THE CORE!)
 # =============================================================================
-# 🔮 What this cell does:
+#  What this cell does:
 #   - This is THE MAIN FUNCTION that makes campaign predictions
 #   - Takes your campaign details and returns predicted performance
 #
-# 🎯 What it predicts:
+#  What it predicts:
 #   1. IMPRESSIONS: How many people will see your content
 #   2. ENGAGEMENT: How many people will interact (like, share, comment, save)
 #   3. ENGAGEMENT RATE: What % of viewers will engage
@@ -361,7 +361,7 @@ print("✅ Model loading function defined!")
 #   5. COST PER ENGAGEMENT: How much you pay for each interaction
 #   6. CONFIDENCE INTERVALS: Range of likely outcomes (95% confidence)
 #
-# 📊 How it works (simplified):
+#  How it works (simplified):
 #   1. Validates your inputs (makes sure they're correct)
 #   2. Loads the trained AI model
 #   3. Converts your inputs to numbers the model understands
@@ -371,8 +371,8 @@ print("✅ Model loading function defined!")
 #   7. Calculates additional metrics (CPM, engagement rate, etc.)
 #   8. Returns everything in a nice dictionary format
 #
-# ⏱️  Run time: 1-3 seconds
-# ✅ Expected output: Dictionary with predictions and metrics
+# ⏱  Run time: 1-3 seconds
+#  Expected output: Dictionary with predictions and metrics
 
 def predict_campaign_metrics(
     total_spend: float,
@@ -745,25 +745,25 @@ def predict_campaign_metrics(
         else:
             return error_response
 
-print("✅ Main prediction function defined!")
+print(" Main prediction function defined!")
 
 
 # =============================================================================
 # CELL 6: Demo Examples (Try These!)
 # =============================================================================
-# 🎯 What this cell does:
+#  What this cell does:
 #   - Shows 5 example predictions to help you understand how it works
 #   - You can run these examples to see the function in action
 #
-# 💡 Examples included:
+#  Examples included:
 #   1. Basic prediction with default parameters (TikTok influencer)
 #   2. Custom Instagram campaign
 #   3. JSON output format
 #   4. Error handling - invalid platform
 #   5. Error handling - negative budget
 #
-# ⏱️  Run time: 5-10 seconds (runs 5 predictions)
-# ✅ Expected output: 5 prediction results and 2 error examples
+# ⏱  Run time: 5-10 seconds (runs 5 predictions)
+#  Expected output: 5 prediction results and 2 error examples
 
 def run_demo_examples():
     """
@@ -774,7 +774,7 @@ def run_demo_examples():
     """
 
     print("=" * 80)
-    print("🎯 CAMPAIGN PREDICTION API - DEMO EXAMPLES")
+    print(" CAMPAIGN PREDICTION API - DEMO EXAMPLES")
     print("=" * 80)
 
     # ========================================
@@ -782,7 +782,7 @@ def run_demo_examples():
     # ========================================
     print("\n[Example 1] Basic prediction with default parameters:")
     print("-" * 80)
-    print("📝 Campaign: $10,000 on TikTok influencer (Flood The Feed)")
+    print(" Campaign: $10,000 on TikTok influencer (Flood The Feed)")
     print()
 
     result1 = predict_campaign_metrics(total_spend=10000.0)
@@ -793,7 +793,7 @@ def run_demo_examples():
     # ========================================
     print("\n[Example 2] Custom Instagram campaign:")
     print("-" * 80)
-    print("📝 Campaign: $5,000 on Instagram paid brand ads (Bau strategy)")
+    print(" Campaign: $5,000 on Instagram paid brand ads (Bau strategy)")
     print()
 
     result2 = predict_campaign_metrics(
@@ -809,7 +809,7 @@ def run_demo_examples():
     # ========================================
     print("\n[Example 3] Same prediction, but returned as JSON string:")
     print("-" * 80)
-    print("📝 Campaign: $15,000 on TikTok influencer")
+    print(" Campaign: $15,000 on TikTok influencer")
     print()
 
     result3 = predict_campaign_metrics(
@@ -825,12 +825,12 @@ def run_demo_examples():
     # ========================================
     print("\n[Example 4] Error handling - invalid platform:")
     print("-" * 80)
-    print("📝 Trying to use 'YouTube' (not supported)")
+    print(" Trying to use 'YouTube' (not supported)")
     print()
 
     result4 = predict_campaign_metrics(
         total_spend=5000.0,
-        platform="YouTube"  # ❌ Invalid! Only Meta, TikTok, Instagram supported
+        platform="YouTube"  #  Invalid! Only Meta, TikTok, Instagram supported
     )
     print(json.dumps(result4, indent=2))
 
@@ -839,33 +839,33 @@ def run_demo_examples():
     # ========================================
     print("\n[Example 5] Error handling - negative budget:")
     print("-" * 80)
-    print("📝 Trying to use negative budget: -$1,000")
+    print(" Trying to use negative budget: -$1,000")
     print()
 
     result5 = predict_campaign_metrics(
-        total_spend=-1000.0  # ❌ Invalid! Budget must be positive
+        total_spend=-1000.0  #  Invalid! Budget must be positive
     )
     print(json.dumps(result5, indent=2))
 
     print("\n" + "=" * 80)
-    print("✅ DEMO COMPLETE!")
+    print(" DEMO COMPLETE!")
     print("=" * 80)
-    print("\n💡 TIP: Modify the examples above to test your own campaigns!")
+    print("\n TIP: Modify the examples above to test your own campaigns!")
 
-print("✅ Demo function defined! Run run_demo_examples() to see it in action.")
+print(" Demo function defined! Run run_demo_examples() to see it in action.")
 
 
 # =============================================================================
 # CELL 7: Run the Demo (Optional)
 # =============================================================================
-# ▶️  What this cell does:
+#   What this cell does:
 #   - Runs all the demo examples from Cell 6
 #   - Shows you how the prediction function works in practice
 #
-# ⏱️  Run time: 5-10 seconds
-# ✅ Expected output: 5 example predictions with results
+# ⏱  Run time: 5-10 seconds
+#  Expected output: 5 example predictions with results
 
 # Uncomment the line below to run the demo:
 # run_demo_examples()
 
-print("✅ Notebook ready! Run run_demo_examples() to see examples, or create your own predictions!")
+print(" Notebook ready! Run run_demo_examples() to see examples, or create your own predictions!")
