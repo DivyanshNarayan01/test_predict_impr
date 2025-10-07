@@ -7,9 +7,15 @@ Allows users to input campaign parameters and get predictions for impressions an
 from flask import Flask, request, jsonify, render_template
 from predict_api import predict_campaign_metrics
 import logging
+import os
 
-# Initialize Flask app
-app = Flask(__name__)
+# Get the absolute path of the current file's directory
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Initialize Flask app with explicit template folder
+app = Flask(__name__,
+            template_folder=os.path.join(BASE_DIR, 'templates'),
+            static_folder=os.path.join(BASE_DIR, 'static'))
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -102,6 +108,9 @@ if __name__ == '__main__':
     print("=" * 80)
     print("Campaign Prediction API Starting...")
     print("=" * 80)
+    print(f"\nBase Directory: {BASE_DIR}")
+    print(f"Template Folder: {app.template_folder}")
+    print(f"Template exists: {os.path.exists(os.path.join(app.template_folder, 'index.html'))}")
     print("\nOpen your browser and navigate to:")
     print("    http://localhost:5000")
     print("\nPress CTRL+C to stop the server\n")
