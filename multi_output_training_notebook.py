@@ -38,8 +38,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -244,20 +242,17 @@ print("\n Engineered dataset saved to: data/campaign_data_multi_output_engineere
 
 
 # =============================================================================
-# CELL 6: Define Features & Create Preprocessing Pipeline
+# CELL 6: Define Features (Pure Pandas Approach - No Disk Saves)
 # =============================================================================
 #   What this cell does:
 #   - Defines which columns will be used as inputs (features)
-#   - Creates a preprocessing pipeline that:
-#     • One-hot encodes categorical features (Platform, campaign_type, content_type)
-#     • Standardizes numerical features (Log_Spend_Total)
-#   - This ensures all features are in the right format for ML models
+#   - Prepares for pure pandas preprocessing (no sklearn pipeline)
 #
 # ⏱  Run time: <1 second
-#  Expected output: Preprocessor created, feature counts shown
+#  Expected output: Feature columns defined
 
 print("\n" + "=" * 80)
-print("PREPROCESSING PIPELINE SETUP")
+print("FEATURE DEFINITION")
 print("=" * 80)
 
 # Define which columns are categorical vs numerical
@@ -268,43 +263,29 @@ print(f"\n Input Features:")
 print(f"   Categorical (3): {categorical_features}")
 print(f"   Numerical (1): {numerical_features}")
 print(f"\n Target Variables (2): Log_Impressions, Log_Engagement")
-
-# Create preprocessing pipeline
-# This will automatically transform raw data into ML-ready format
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), categorical_features),
-        ('num', StandardScaler(), numerical_features)
-    ],
-    remainder='passthrough'
-)
-
-print("\n Preprocessor pipeline created")
-print("   - Categorical features → One-hot encoded")
-print("   - Numerical features → Standardized (mean=0, std=1)")
+print(f"\n Using pure pandas preprocessing (no disk saves)")
 
 
 # =============================================================================
-# CELL 7: Train-Test Split & Data Preprocessing
+# CELL 7: Train-Test Split & Pure Pandas Preprocessing
 # =============================================================================
 #   What this cell does:
 #   - Separates data into training (80%) and testing (20%) sets
-#   - Fits the preprocessor on training data
-#   - Transforms both train and test sets
-#   - Saves preprocessor and processed data to disk
+#   - Applies pure pandas preprocessing (one-hot encoding + standardization)
+#   - Keeps everything in memory (NO disk saves)
 #
 # ⏱  Run time: ~1 second
-#  Expected output: Train/test sizes shown, files saved
+#  Expected output: Train/test sizes shown, preprocessing complete
 
-# Prepare features (X) and targets (y)
-X = df_engineered[categorical_features + numerical_features]
-y_multi = df_engineered[['Log_Impressions', 'Log_Engagement']].values
+# Prepare features and targets
+X = df_engineered[categorical_features + numerical_features].copy()
+y_multi = df_engineered[['Log_Impressions', 'Log_Engagement']]
 
 print(f"\n Data shapes:")
 print(f"   Features (X): {X.shape}")
 print(f"   Targets (y): {y_multi.shape} [Impressions, Engagement]")
 
-# Split into train (80%) and test (20%)
+# Split into train (80%) and test (20%) BEFORE preprocessing
 X_train, X_test, y_train, y_test = train_test_split(
     X, y_multi, test_size=0.2, random_state=42
 )
@@ -313,26 +294,45 @@ print(f"\n  Train-test split (80/20):")
 print(f"   Training samples: {X_train.shape[0]}")
 print(f"   Testing samples: {X_test.shape[0]}")
 
-# Fit preprocessor on training data and transform both sets
-X_train_processed = preprocessor.fit_transform(X_train)
-X_test_processed = preprocessor.transform(X_test)
+# --- PURE PANDAS PREPROCESSING (In-Memory) ---
+print("\n Applying pure pandas preprocessing...")
 
-print(f"\n Preprocessing complete:")
-print(f"   Train set: {X_train_processed.shape[0]} samples × {X_train_processed.shape[1]} features")
-print(f"   Test set: {X_test_processed.shape[0]} samples × {X_test_processed.shape[1]} features")
-print(f"   (Features increased from 5 to {X_train_processed.shape[1]} due to one-hot encoding)")
+# 1. One-hot encode categorical features
+X_train_processed = pd.get_dummies(X_train, columns=categorical_features, drop_first=True)
+X_test_processed = pd.get_dummies(X_test, columns=categorical_features, drop_first=True)
 
-# Save preprocessor and processed data
-joblib.dump(preprocessor, 'models/multi_output_preprocessor.pkl')
-np.save('data/X_train_multi.npy', X_train_processed)
-np.save('data/X_test_multi.npy', X_test_processed)
-np.save('data/y_train_multi.npy', y_train)
-np.save('data/y_test_multi.npy', y_test)
+# Align test set columns with train set (handle missing categories)
+X_train_processed, X_test_processed = X_train_processed.align(
+    X_test_processed, join='left', axis=1, fill_value=0
+)
 
-print("\n Files saved:")
-print("   - models/multi_output_preprocessor.pkl")
-print("   - data/X_train_multi.npy, X_test_multi.npy")
-print("   - data/y_train_multi.npy, y_test_multi.npy")
+# 2. Standardize numerical feature (using training statistics)
+scaler_mean = X_train_processed['Log_Spend_Total'].mean()
+scaler_std = X_train_processed['Log_Spend_Total'].std()
+
+X_train_processed['Log_Spend_Total'] = (X_train_processed['Log_Spend_Total'] - scaler_mean) / scaler_std
+X_test_processed['Log_Spend_Total'] = (X_test_processed['Log_Spend_Total'] - scaler_mean) / scaler_std
+
+# Convert to numpy arrays for model training
+X_train_processed_array = X_train_processed.values
+X_test_processed_array = X_test_processed.values
+y_train_array = y_train.values
+y_test_array = y_test.values
+
+# Store preprocessing metadata for later use in predictions
+preprocessing_metadata = {
+    'feature_columns': X_train_processed.columns.tolist(),
+    'scaler_mean': float(scaler_mean),
+    'scaler_std': float(scaler_std),
+    'categorical_features': categorical_features,
+    'numerical_features': numerical_features
+}
+
+print(f"\n Preprocessing complete (in-memory, no disk saves):")
+print(f"   Train set: {X_train_processed_array.shape[0]} samples × {X_train_processed_array.shape[1]} features")
+print(f"   Test set: {X_test_processed_array.shape[0]} samples × {X_test_processed_array.shape[1]} features")
+print(f"   Feature columns ({len(X_train_processed.columns)}): {X_train_processed.columns.tolist()}")
+print(f"   Scaler stats: mean={scaler_mean:.4f}, std={scaler_std:.4f}")
 
 
 # =============================================================================
@@ -492,7 +492,7 @@ rf_model = MultiOutputRegressor(rf_base, n_jobs=1)
 
 # Train and evaluate
 rf_metrics, rf_trained = evaluate_multi_output_model(
-    rf_model, X_train_processed, y_train, X_test_processed, y_test,
+    rf_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
     "Random Forest MultiOutput"
 )
 
@@ -535,7 +535,7 @@ if XGBOOST_AVAILABLE:
 
     # Train and evaluate
     xgb_metrics, xgb_trained = evaluate_multi_output_model(
-        xgb_model, X_train_processed, y_train, X_test_processed, y_test,
+        xgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
         "XGBoost MultiOutput"
     )
 
@@ -583,7 +583,7 @@ if LIGHTGBM_AVAILABLE:
 
     # Train and evaluate
     lgb_metrics, lgb_trained = evaluate_multi_output_model(
-        lgb_model, X_train_processed, y_train, X_test_processed, y_test,
+        lgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
         "LightGBM MultiOutput"
     )
 
@@ -756,11 +756,19 @@ model_filename = f"models/best_multi_output_model_{best_model_name.lower().repla
 joblib.dump(best_model, model_filename)
 print(f"\n Best model saved to: {model_filename}")
 
-# Save model metadata
+# Save model metadata WITH preprocessing info (for no-preprocessor-file predictions)
 best_metrics = next(m for m in all_results if m['model_name'] == best_model_name)
 metadata = {
     'model_name': best_model_name,
     'avg_test_r2': float(best_avg_r2),
+    'dataset': {
+        'total_samples': 1000,
+        'training_samples': X_train.shape[0],
+        'testing_samples': X_test.shape[0],
+        'train_test_split': "80/20",
+        'features_count': len(categorical_features) + len(numerical_features),
+        'target_variables': 2
+    },
     'impressions': {
         'test_r2': float(best_metrics['impressions']['test_r2']),
         'test_mae': float(best_metrics['impressions']['test_mae']),
@@ -773,13 +781,14 @@ metadata = {
         'test_rmse': float(best_metrics['engagement']['test_rmse']),
         'test_mape': float(best_metrics['engagement']['test_mape'])
     },
-    'engagement_rate_mape': float(best_metrics['engagement_rate_mape'])
+    'engagement_rate_mape': float(best_metrics['engagement_rate_mape']),
+    'preprocessing': preprocessing_metadata
 }
 
 with open('models/multi_output_model_metadata.json', 'w') as f:
     json.dump(metadata, f, indent=2)
 
-print(f" Model metadata saved to: models/multi_output_model_metadata.json")
+print(f" Model metadata saved to: models/multi_output_model_metadata.json (includes preprocessing metadata)")
 
 
 # =============================================================================
@@ -812,13 +821,10 @@ print("    Results:")
 print("      - results/multi_output_model_comparison.csv")
 print("   🤖 Models:")
 print(f"      - {model_filename}")
-print("      - models/multi_output_model_metadata.json")
-print("     Preprocessing:")
-print("      - models/multi_output_preprocessor.pkl")
-print("      - data/X_train_multi.npy, X_test_multi.npy")
-print("      - data/y_train_multi.npy, y_test_multi.npy")
+print("      - models/multi_output_model_metadata.json (includes preprocessing metadata)")
 print("    Data:")
 print("      - data/campaign_data_multi_output_engineered.csv")
+print("\n Note: Preprocessor and processed data kept in memory (not saved to disk)")
 
 print("\n" + "=" * 80)
 print("Next Steps:")

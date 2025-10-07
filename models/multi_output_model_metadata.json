@@ -1,6 +1,6 @@
 {
   "model_name": "Random Forest MultiOutput",
-  "avg_test_r2": 0.2241718812362576,
+  "avg_test_r2": 0.22417188123625736,
   "dataset": {
     "total_samples": 1000,
     "training_samples": 800,
@@ -10,16 +10,40 @@
     "target_variables": 2
   },
   "impressions": {
-    "test_r2": 0.16544863943158794,
-    "test_mae": 239241.21430630452,
+    "test_r2": 0.16544863943158783,
+    "test_mae": 239241.2143063045,
     "test_rmse": 381646.4062233876,
     "test_mape": 54.81172575693415
   },
   "engagement": {
-    "test_r2": 0.28289512304092723,
-    "test_mae": 17339.235688743505,
-    "test_rmse": 32251.288056003224,
-    "test_mape": 60.33177949537123
+    "test_r2": 0.2828951230409269,
+    "test_mae": 17339.235688743516,
+    "test_rmse": 32251.28805600323,
+    "test_mape": 60.331779495371265
   },
-  "engagement_rate_mape": 27.160594885248095
+  "engagement_rate_mape": 27.160594885248106,
+  "preprocessing": {
+    "feature_columns": [
+      "Log_Spend_Total",
+      "Platform_Meta",
+      "Platform_Tiktok",
+      "campaign_type_Flood The Feed",
+      "campaign_type_Mm",
+      "content_type_Influencer - Ogilvy - Boosted Only",
+      "content_type_Influencer - Ogilvy - Organic Only",
+      "content_type_Owned - Boosted Only",
+      "content_type_Paid - Brand",
+      "content_type_Paid - Partnership"
+    ],
+    "scaler_mean": 7.580040592081652,
+    "scaler_std": 1.7987730135437832,
+    "categorical_features": [
+      "Platform",
+      "campaign_type",
+      "content_type"
+    ],
+    "numerical_features": [
+      "Log_Spend_Total"
+    ]
+  }
 }

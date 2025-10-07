@@ -36,8 +36,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -194,11 +192,11 @@ df_engineered.to_csv('data/campaign_data_multi_output_engineered.csv', index=Fal
 print("\nEngineered dataset saved to 'data/campaign_data_multi_output_engineered.csv'")
 
 # =============================================================================
-# PART 2: PREPROCESSING PIPELINE & TRAIN-TEST SPLIT
+# PART 2: PURE PANDAS PREPROCESSING & TRAIN-TEST SPLIT (NO DISK SAVES)
 # =============================================================================
 
 print("\n" + "=" * 80)
-print("PREPROCESSING PIPELINE & TRAIN-TEST SPLIT")
+print("PURE PANDAS PREPROCESSING & TRAIN-TEST SPLIT")
 print("=" * 80)
 
 # Define features and targets
@@ -209,45 +207,61 @@ print("\nCategorical features (3):", categorical_features)
 print("Numerical features (1):", numerical_features)
 print("Target variables (2): Log_Impressions, Log_Engagement")
 
-# Create preprocessing pipeline
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), categorical_features),
-        ('num', StandardScaler(), numerical_features)
-    ],
-    remainder='passthrough'
-)
-
-print("\nPreprocessor created successfully!")
-
 # Prepare features and multi-output targets
-X = df_engineered[categorical_features + numerical_features]
-y_multi = df_engineered[['Log_Impressions', 'Log_Engagement']].values
+X = df_engineered[categorical_features + numerical_features].copy()
+y_multi = df_engineered[['Log_Impressions', 'Log_Engagement']]
 
 print(f"\nFeatures shape: {X.shape}")
 print(f"Multi-output targets shape: {y_multi.shape}")
 
-# Split the data
+# Split the data BEFORE preprocessing
 X_train, X_test, y_train, y_test = train_test_split(
     X, y_multi, test_size=0.2, random_state=42
 )
 
-# Fit and transform
-X_train_processed = preprocessor.fit_transform(X_train)
-X_test_processed = preprocessor.transform(X_test)
+print(f"\nTrain-test split (80/20):")
+print(f"  Training samples: {X_train.shape[0]}")
+print(f"  Testing samples: {X_test.shape[0]}")
 
-print(f"\nTrain set: {X_train_processed.shape[0]} samples, {X_train_processed.shape[1]} features")
-print(f"Test set: {X_test_processed.shape[0]} samples, {X_test_processed.shape[1]} features")
+# --- PURE PANDAS PREPROCESSING (In-Memory) ---
+print("\nApplying pure pandas preprocessing...")
 
-# Save preprocessor
-joblib.dump(preprocessor, 'models/multi_output_preprocessor.pkl')
-print("\nPreprocessor saved to 'models/multi_output_preprocessor.pkl'")
+# 1. One-hot encode categorical features
+X_train_processed = pd.get_dummies(X_train, columns=categorical_features, drop_first=True)
+X_test_processed = pd.get_dummies(X_test, columns=categorical_features, drop_first=True)
 
-np.save('data/X_train_multi.npy', X_train_processed)
-np.save('data/X_test_multi.npy', X_test_processed)
-np.save('data/y_train_multi.npy', y_train)
-np.save('data/y_test_multi.npy', y_test)
-print("Processed data saved to 'data/' directory")
+# Align test set columns with train set (handle missing categories)
+X_train_processed, X_test_processed = X_train_processed.align(
+    X_test_processed, join='left', axis=1, fill_value=0
+)
+
+# 2. Standardize numerical feature (using training statistics)
+scaler_mean = X_train_processed['Log_Spend_Total'].mean()
+scaler_std = X_train_processed['Log_Spend_Total'].std()
+
+X_train_processed['Log_Spend_Total'] = (X_train_processed['Log_Spend_Total'] - scaler_mean) / scaler_std
+X_test_processed['Log_Spend_Total'] = (X_test_processed['Log_Spend_Total'] - scaler_mean) / scaler_std
+
+# Convert to numpy arrays for model training
+X_train_processed_array = X_train_processed.values
+X_test_processed_array = X_test_processed.values
+y_train_array = y_train.values
+y_test_array = y_test.values
+
+# Store preprocessing metadata for later use in predictions
+preprocessing_metadata = {
+    'feature_columns': X_train_processed.columns.tolist(),
+    'scaler_mean': float(scaler_mean),
+    'scaler_std': float(scaler_std),
+    'categorical_features': categorical_features,
+    'numerical_features': numerical_features
+}
+
+print(f"\nPreprocessing complete (in-memory, no disk saves):")
+print(f"  Train set: {X_train_processed_array.shape[0]} samples × {X_train_processed_array.shape[1]} features")
+print(f"  Test set: {X_test_processed_array.shape[0]} samples × {X_test_processed_array.shape[1]} features")
+print(f"  Feature columns: {X_train_processed.columns.tolist()}")
+print(f"  Scaler stats: mean={scaler_mean:.4f}, std={scaler_std:.4f}")
 
 # =============================================================================
 # PART 3: MULTI-OUTPUT MODEL TRAINING
@@ -376,7 +390,7 @@ rf_base = RandomForestRegressor(
 )
 rf_model = MultiOutputRegressor(rf_base, n_jobs=1)
 rf_metrics, rf_trained = evaluate_multi_output_model(
-    rf_model, X_train_processed, y_train, X_test_processed, y_test,
+    rf_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
     "Random Forest MultiOutput"
 )
 print_multi_output_results(rf_metrics)
@@ -396,7 +410,7 @@ if XGBOOST_AVAILABLE:
     )
     xgb_model = MultiOutputRegressor(xgb_base, n_jobs=1)
     xgb_metrics, xgb_trained = evaluate_multi_output_model(
-        xgb_model, X_train_processed, y_train, X_test_processed, y_test,
+        xgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
         "XGBoost MultiOutput"
     )
     print_multi_output_results(xgb_metrics)
@@ -422,7 +436,7 @@ if LIGHTGBM_AVAILABLE:
     # Wrap LightGBM in MultiOutputRegressor for multi-target support
     lgb_model = MultiOutputRegressor(lgb_base, n_jobs=1)
     lgb_metrics, lgb_trained = evaluate_multi_output_model(
-        lgb_model, X_train_processed, y_train, X_test_processed, y_test,
+        lgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
         "LightGBM MultiOutput"
     )
     print_multi_output_results(lgb_metrics)
@@ -547,11 +561,19 @@ model_filename = f"models/best_multi_output_model_{best_model_name.lower().repla
 joblib.dump(best_model, model_filename)
 print(f"\nBest model saved to '{model_filename}'")
 
-# Save model metadata
+# Save model metadata WITH preprocessing info (for no-preprocessor-file predictions)
 best_metrics = next(m for m in all_results if m['model_name'] == best_model_name)
 metadata = {
     'model_name': best_model_name,
     'avg_test_r2': float(best_avg_r2),
+    'dataset': {
+        'total_samples': 1000,
+        'training_samples': X_train.shape[0],
+        'testing_samples': X_test.shape[0],
+        'train_test_split': "80/20",
+        'features_count': len(categorical_features) + len(numerical_features),
+        'target_variables': 2
+    },
     'impressions': {
         'test_r2': float(best_metrics['impressions']['test_r2']),
         'test_mae': float(best_metrics['impressions']['test_mae']),
@@ -564,7 +586,8 @@ metadata = {
         'test_rmse': float(best_metrics['engagement']['test_rmse']),
         'test_mape': float(best_metrics['engagement']['test_mape'])
     },
-    'engagement_rate_mape': float(best_metrics['engagement_rate_mape'])
+    'engagement_rate_mape': float(best_metrics['engagement_rate_mape']),
+    'preprocessing': preprocessing_metadata
 }
 
 with open('models/multi_output_model_metadata.json', 'w') as f:
@@ -586,5 +609,5 @@ print("  - results/multi_output_target_distributions.png")
 print("  - results/multi_output_model_comparison.png")
 print("  - results/multi_output_model_comparison.csv")
 print(f"  - {model_filename}")
-print("  - models/multi_output_model_metadata.json")
-print("  - models/multi_output_preprocessor.pkl")
+print("  - models/multi_output_model_metadata.json (includes preprocessing metadata)")
+print("\n Note: Preprocessor and processed data kept in memory (not saved to disk)")

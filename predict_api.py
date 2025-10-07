@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-Campaign Prediction API Function
+Campaign Prediction API Function (Pure Pandas Preprocessing - No Disk Saves)
 
 A robust function that loads the pickled multi-output model and makes predictions
 with comprehensive error handling and validation.
+
+PURE PANDAS APPROACH:
+- No preprocessor pickle file needed (preprocessing metadata stored in JSON)
+- Preprocessing recreated inline using pure pandas operations
+- Reduced disk I/O and increased transparency
 
 Usage:
     from predict_api import predict_campaign_metrics
@@ -95,15 +100,55 @@ def validate_inputs(
         )
 
 
+def preprocess_features(campaign_df: pd.DataFrame, preprocessing_metadata: dict) -> np.ndarray:
+    """
+    Recreate preprocessing using pure pandas (no saved preprocessor needed).
+
+    Args:
+        campaign_df: DataFrame with raw features
+        preprocessing_metadata: Dictionary with preprocessing information
+
+    Returns:
+        Preprocessed features as numpy array
+
+    Raises:
+        ModelPredictionError: If preprocessing fails
+    """
+    try:
+        categorical_features = preprocessing_metadata['categorical_features']
+        scaler_mean = preprocessing_metadata['scaler_mean']
+        scaler_std = preprocessing_metadata['scaler_std']
+        expected_columns = preprocessing_metadata['feature_columns']
+
+        # 1. One-hot encode categorical features
+        df_encoded = pd.get_dummies(campaign_df, columns=categorical_features, drop_first=True)
+
+        # 2. Ensure all expected columns are present (add missing ones with 0)
+        for col in expected_columns:
+            if col not in df_encoded.columns:
+                df_encoded[col] = 0
+
+        # 3. Reorder columns to match training data
+        df_encoded = df_encoded[expected_columns]
+
+        # 4. Standardize numerical feature
+        df_encoded['Log_Spend_Total'] = (df_encoded['Log_Spend_Total'] - scaler_mean) / scaler_std
+
+        return df_encoded.values
+
+    except Exception as e:
+        raise ModelPredictionError(f"Preprocessing failed: {str(e)}")
+
+
 def load_model_artifacts(models_dir: str = 'models') -> tuple:
     """
-    Load the trained model and preprocessor from disk.
+    Load the trained model and preprocessing metadata from disk.
 
     Args:
         models_dir: Directory containing model files
 
     Returns:
-        Tuple of (model, preprocessor)
+        Tuple of (model, preprocessing_metadata)
 
     Raises:
         ModelPredictionError: If model files cannot be loaded
@@ -114,18 +159,25 @@ def load_model_artifacts(models_dir: str = 'models') -> tuple:
         raise ModelPredictionError(f"Models directory not found: {models_dir}")
 
     model_file = models_path / 'best_multi_output_model_random_forest_multioutput.pkl'
-    preprocessor_file = models_path / 'multi_output_preprocessor.pkl'
+    metadata_file = models_path / 'multi_output_model_metadata.json'
 
     if not model_file.exists():
         raise ModelPredictionError(f"Model file not found: {model_file}")
 
-    if not preprocessor_file.exists():
-        raise ModelPredictionError(f"Preprocessor file not found: {preprocessor_file}")
+    if not metadata_file.exists():
+        raise ModelPredictionError(f"Metadata file not found: {metadata_file}")
 
     try:
         model = joblib.load(model_file)
-        preprocessor = joblib.load(preprocessor_file)
-        return model, preprocessor
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+
+        # Extract preprocessing metadata
+        if 'preprocessing' not in metadata:
+            raise ModelPredictionError("Metadata file missing preprocessing information")
+
+        preprocessing_metadata = metadata['preprocessing']
+        return model, preprocessing_metadata
     except Exception as e:
         raise ModelPredictionError(f"Failed to load model artifacts: {str(e)}")
 
@@ -204,8 +256,8 @@ def predict_campaign_metrics(
         # Validate inputs
         validate_inputs(total_spend, platform, campaign_type, content_type)
 
-        # Load model and preprocessor
-        model, preprocessor = load_model_artifacts(models_dir)
+        # Load model and preprocessing metadata
+        model, preprocessing_metadata = load_model_artifacts(models_dir)
 
         # Prepare input data
         campaign_data = {
@@ -226,8 +278,8 @@ def predict_campaign_metrics(
         numerical_features = ['Log_Spend_Total']
         X = campaign_df[categorical_features + numerical_features]
 
-        # Preprocess features
-        X_processed = preprocessor.transform(X)
+        # Preprocess features using pure pandas (no saved preprocessor)
+        X_processed = preprocess_features(X, preprocessing_metadata)
 
         # Make predictions (returns log-transformed values)
         predictions_log = model.predict(X_processed)[0]
