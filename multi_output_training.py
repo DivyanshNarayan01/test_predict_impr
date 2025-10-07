@@ -63,18 +63,18 @@ print(" Available models: Random Forest, XGBoost, LightGBM")
 # Purpose: Load campaign data from CSV and validate it has all required columns
 # Run time: ~1 second
 # What it does:
-#   - Loads data/campaign_data.csv (1000 campaigns)
+#   - Loads data/input_data.csv (1000 campaigns)
 #   - Shows dataset dimensions and column names
 #   - Displays first 5 rows to preview data
 #   - Validates all required columns exist
-# Expected output: 1000 rows × 12+ columns
+# Expected output: 1000 rows × 6 columns
 
 print("=" * 80)
 print("MULTI-OUTPUT PREDICTION: IMPRESSIONS + ENGAGEMENT")
 print("=" * 80)
 
 print("\n[STEP 1/6] Loading dataset...")
-df = pd.read_csv('data/campaign_data.csv')
+df = pd.read_csv('data/input_data.csv')
 print(f" Dataset loaded: {df.shape[0]} rows, {df.shape[1]} columns")
 print(f"\n Columns: {list(df.columns)}")
 print(f"\n First few rows:")
@@ -84,7 +84,7 @@ print(df.head())
 required_columns = ['campaign_type', 'Platform', 'content_type', 'total_spend', 'Impressions', 'Engagement']
 missing_columns = set(required_columns) - set(df.columns)
 if missing_columns:
-    raise ValueError(f" Missing required columns: {missing_columns}. Please regenerate data with: python3 generate_dummy_data.py")
+    raise ValueError(f" Missing required columns: {missing_columns}. Please check data/input_data.csv")
 else:
     print(f"\n All required columns present: {required_columns}")
 
@@ -158,8 +158,8 @@ axes[1, 2].set_xlabel('Log(Impressions + 1)')
 axes[1, 2].set_ylabel('Log(Engagement + 1)')
 
 plt.tight_layout()
-# plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
-print("Target distribution plots generated (not saved to disk)")
+plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
+print("Target distribution plots saved to 'results/multi_output_target_distributions.png'")
 plt.close()
 
 # Feature engineering
@@ -455,8 +455,8 @@ comparison_df = comparison_df.sort_values('Avg_Test_R2', ascending=False)
 print("\nModel Comparison Summary:")
 print(comparison_df.to_string(index=False))
 
-# comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
-print("\nModel comparison generated (not saved to disk)")
+comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
+print("\nModel comparison saved to 'results/multi_output_model_comparison.csv'")
 
 # Visualize comparison
 fig, axes = plt.subplots(2, 3, figsize=(20, 12))
@@ -504,8 +504,8 @@ axes[1, 2].tick_params(axis='x', rotation=15)
 axes[1, 2].grid(axis='y', alpha=0.3)
 
 plt.tight_layout()
-# plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
-print("\nModel comparison visualization generated (not saved to disk)")
+plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
+print("\nModel comparison visualization saved to 'results/multi_output_model_comparison.png'")
 plt.close()
 
 # =============================================================================
@@ -581,4 +581,7 @@ print(f" Average Test R²: {best_avg_r2:.4f}")
 print("\n Files Generated:")
 print(f"  - {model_filename}")
 print("  - models/multi_output_model_metadata.json (includes preprocessing metadata)")
-print("\n Note: Visualizations, comparisons, preprocessor, and processed data kept in memory (not saved to disk)")
+print("  - results/multi_output_target_distributions.png")
+print("  - results/multi_output_model_comparison.csv")
+print("  - results/multi_output_model_comparison.png")
+print("\n Note: Preprocessor and processed data arrays kept in memory (not saved to disk)")

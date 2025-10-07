@@ -288,7 +288,6 @@ MM/
 │   ├── predict_api.py                  # Prediction function (core logic)
 │
 ├── Model Training & Data
-│   ├── generate_dummy_data.py          # Generate synthetic training data
 │   ├── multi_output_training.py        # Train models & select best performer
 │   └── multi_output_training_notebook.py  # Jupyter-friendly training script
 │
@@ -302,15 +301,12 @@ MM/
 ├── Trained Models (artifacts)
 │   ├── models/
 │   │   ├── best_multi_output_model_random_forest_multioutput.pkl  # CURRENT MODEL (R²=0.224)
-│   │   ├── multi_output_preprocessor.pkl                          # Feature pipeline
-│   │   └── multi_output_model_metadata.json                       # Performance metrics
+│   │   └── multi_output_model_metadata.json                       # Performance metrics & preprocessing info
 │
-├── Data (generated)
+├── Data
 │   ├── data/
-│   │   ├── campaign_data.csv                        # Training data (1000 campaigns)
-│   │   ├── campaign_data_multi_output_engineered.csv  # With log features
-│   │   ├── X_train_multi.npy, X_test_multi.npy      # Preprocessed features
-│   │   └── y_train_multi.npy, y_test_multi.npy      # Target variables
+│   │   ├── input_data.csv                           # Training data (1000 campaigns)
+│   │   └── campaign_data_multi_output_engineered.csv  # With log features (generated during training)
 │
 ├── Results (outputs)
 │   ├── results/
@@ -336,7 +332,6 @@ MM/
 |------|---------|--------|
 | `app.py` | Flask web server with REST API | ✅ Up-to-date, prediction-only |
 | `predict_api.py` | Core prediction function | ✅ Up-to-date, Random Forest |
-| `generate_dummy_data.py` | Data generation | ✅ Up-to-date |
 | `multi_output_training.py` | Model training pipeline | ✅ Up-to-date, trains 3 models |
 | `multi_output_training_notebook.py` | Jupyter training script | ✅ Up-to-date, 15 cells |
 | `model_analysis.ipynb` | Exploratory data analysis | ✅ Up-to-date, Random Forest |
@@ -364,16 +359,13 @@ Required packages:
 ### First-Time Setup
 
 ```bash
-# 1. Generate training data
-python3 generate_dummy_data.py
-
-# 2. Train models (trains Random Forest, XGBoost, LightGBM and selects best)
+# 1. Train models (trains Random Forest, XGBoost, LightGBM and selects best)
 python3 multi_output_training.py
 
-# 3. Start Flask server
+# 2. Start Flask server
 python3 app.py
 
-# 4. Open browser to http://localhost:5000
+# 3. Open browser to http://localhost:5000
 ```
 
 ---

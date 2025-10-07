@@ -77,7 +77,7 @@ print("MULTI-OUTPUT PREDICTION: IMPRESSIONS + ENGAGEMENT")
 print("=" * 80)
 
 print("\n[STEP 1/6] Loading dataset...")
-df = pd.read_csv('data/campaign_data.csv')
+df = pd.read_csv('data/input_data.csv')
 print(f" Dataset loaded: {df.shape[0]} rows, {df.shape[1]} columns")
 print(f"\n Columns: {list(df.columns)}")
 print(f"\n First few rows:")
@@ -87,7 +87,7 @@ print(df.head())
 required_columns = ['campaign_type', 'Platform', 'content_type', 'total_spend', 'Impressions', 'Engagement']
 missing_columns = set(required_columns) - set(df.columns)
 if missing_columns:
-    raise ValueError(f" Missing columns: {missing_columns}. Run: python3 generate_dummy_data.py")
+    raise ValueError(f" Missing columns: {missing_columns}. Please check data/input_data.csv")
 else:
     print(f"\n All required columns present")
 
@@ -191,8 +191,8 @@ axes[1, 2].set_xlabel('Log(Impressions + 1)')
 axes[1, 2].set_ylabel('Log(Engagement + 1)')
 
 plt.tight_layout()
-# plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
-print(" Visualization generated (not saved to disk)")
+plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
+print(" Visualization saved to 'results/multi_output_target_distributions.png'")
 plt.show()
 
 
@@ -614,8 +614,8 @@ comparison_df = comparison_df.sort_values('Avg_Test_R2', ascending=False)
 print("\n Model Comparison Summary:")
 print(comparison_df.to_string(index=False))
 
-# comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
-print("\n Model comparison generated (not saved to disk)")
+comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
+print("\n Model comparison saved to 'results/multi_output_model_comparison.csv'")
 
 # Highlight winner
 best_model_name = comparison_df.iloc[0]['Model']
@@ -689,8 +689,8 @@ axes[1, 2].tick_params(axis='x', rotation=15)
 axes[1, 2].grid(axis='y', alpha=0.3)
 
 plt.tight_layout()
-# plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
-print(" Visualization generated (not saved to disk)")
+plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
+print(" Visualization saved to 'results/multi_output_model_comparison.png'")
 plt.show()
 
 
@@ -793,7 +793,11 @@ print(f"      - {model_filename}")
 print("      - models/multi_output_model_metadata.json (includes preprocessing metadata)")
 print("    Data:")
 print("      - data/campaign_data_multi_output_engineered.csv")
-print("\n Note: Visualizations, comparisons, preprocessor, and processed data kept in memory (not saved to disk)")
+print("    Visualizations & Analysis:")
+print("      - results/multi_output_target_distributions.png")
+print("      - results/multi_output_model_comparison.csv")
+print("      - results/multi_output_model_comparison.png")
+print("\n Note: Preprocessor and processed data arrays kept in memory (not saved to disk)")
 
 print("\n" + "=" * 80)
 print("Next Steps:")
