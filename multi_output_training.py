@@ -45,22 +45,9 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import XGBoost and LightGBM (with safety checks)
-try:
-    import xgboost as xgb
-    XGBOOST_AVAILABLE = True
-    print(" XGBoost available")
-except ImportError:
-    print("  XGBoost not installed. Install with: pip install xgboost")
-    XGBOOST_AVAILABLE = False
-
-try:
-    import lightgbm as lgb
-    LIGHTGBM_AVAILABLE = True
-    print(" LightGBM available")
-except ImportError:
-    print("  LightGBM not installed. Install with: pip install lightgbm")
-    LIGHTGBM_AVAILABLE = False
+# Import XGBoost and LightGBM
+import xgboost as xgb
+import lightgbm as lgb
 
 # Configure pandas and matplotlib display settings
 pd.set_option('display.max_columns', None)  # Show all columns in tables
@@ -68,7 +55,7 @@ plt.style.use('default')
 sns.set_palette('husl')  # Use colorful palette for charts
 
 print("\n All libraries imported successfully!")
-print(f" Available models: Random Forest, XGBoost={XGBOOST_AVAILABLE}, LightGBM={LIGHTGBM_AVAILABLE}")
+print(" Available models: Random Forest, XGBoost, LightGBM")
 
 # =============================================================================
 # CELL 2: Load and Validate Dataset
@@ -171,8 +158,8 @@ axes[1, 2].set_xlabel('Log(Impressions + 1)')
 axes[1, 2].set_ylabel('Log(Engagement + 1)')
 
 plt.tight_layout()
-plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
-print("Target distribution plots saved to results/multi_output_target_distributions.png")
+# plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
+print("Target distribution plots generated (not saved to disk)")
 plt.close()
 
 # Feature engineering
@@ -397,53 +384,45 @@ print_multi_output_results(rf_metrics)
 all_results.append(rf_metrics)
 
 # Model 2: XGBoost MultiOutputRegressor
-if XGBOOST_AVAILABLE:
-    print("\n[2/3] Training XGBoost MultiOutputRegressor...")
-    xgb_base = xgb.XGBRegressor(
-        n_estimators=100,
-        max_depth=5,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        n_jobs=-1
-    )
-    xgb_model = MultiOutputRegressor(xgb_base, n_jobs=1)
-    xgb_metrics, xgb_trained = evaluate_multi_output_model(
-        xgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
-        "XGBoost MultiOutput"
-    )
-    print_multi_output_results(xgb_metrics)
-    all_results.append(xgb_metrics)
-else:
-    print("\n[2/3] SKIPPED: XGBoost not available")
-    xgb_trained = None
+print("\n[2/3] Training XGBoost MultiOutputRegressor...")
+xgb_base = xgb.XGBRegressor(
+    n_estimators=100,
+    max_depth=5,
+    learning_rate=0.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    random_state=42,
+    n_jobs=-1
+)
+xgb_model = MultiOutputRegressor(xgb_base, n_jobs=1)
+xgb_metrics, xgb_trained = evaluate_multi_output_model(
+    xgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
+    "XGBoost MultiOutput"
+)
+print_multi_output_results(xgb_metrics)
+all_results.append(xgb_metrics)
 
 # Model 3: LightGBM MultiOutputRegressor
-if LIGHTGBM_AVAILABLE:
-    print("\n[3/3] Training LightGBM MultiOutputRegressor...")
-    lgb_base = lgb.LGBMRegressor(
-        objective='regression',
-        n_estimators=100,
-        num_leaves=31,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        n_jobs=-1,
-        verbose=-1
-    )
-    # Wrap LightGBM in MultiOutputRegressor for multi-target support
-    lgb_model = MultiOutputRegressor(lgb_base, n_jobs=1)
-    lgb_metrics, lgb_trained = evaluate_multi_output_model(
-        lgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
-        "LightGBM MultiOutput"
-    )
-    print_multi_output_results(lgb_metrics)
-    all_results.append(lgb_metrics)
-else:
-    print("\n[3/3] SKIPPED: LightGBM not available")
-    lgb_trained = None
+print("\n[3/3] Training LightGBM MultiOutputRegressor...")
+lgb_base = lgb.LGBMRegressor(
+    objective='regression',
+    n_estimators=100,
+    num_leaves=31,
+    learning_rate=0.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    random_state=42,
+    n_jobs=-1,
+    verbose=-1
+)
+# Wrap LightGBM in MultiOutputRegressor for multi-target support
+lgb_model = MultiOutputRegressor(lgb_base, n_jobs=1)
+lgb_metrics, lgb_trained = evaluate_multi_output_model(
+    lgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
+    "LightGBM MultiOutput"
+)
+print_multi_output_results(lgb_metrics)
+all_results.append(lgb_metrics)
 
 # =============================================================================
 # PART 4: MODEL COMPARISON & VISUALIZATION
@@ -476,9 +455,8 @@ comparison_df = comparison_df.sort_values('Avg_Test_R2', ascending=False)
 print("\nModel Comparison Summary:")
 print(comparison_df.to_string(index=False))
 
-# Save comparison
-comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
-print("\nComparison saved to 'results/multi_output_model_comparison.csv'")
+# comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
+print("\nModel comparison generated (not saved to disk)")
 
 # Visualize comparison
 fig, axes = plt.subplots(2, 3, figsize=(20, 12))
@@ -526,8 +504,8 @@ axes[1, 2].tick_params(axis='x', rotation=15)
 axes[1, 2].grid(axis='y', alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
-print("\nModel comparison visualization saved to 'results/multi_output_model_comparison.png'")
+# plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
+print("\nModel comparison visualization generated (not saved to disk)")
 plt.close()
 
 # =============================================================================
@@ -548,13 +526,9 @@ print(f"Average Test R²: {best_avg_r2:.4f}")
 # Save best model
 models_dict = {
     'Random Forest MultiOutput': rf_trained,
+    'XGBoost MultiOutput': xgb_trained,
+    'LightGBM MultiOutput': lgb_trained
 }
-
-if XGBOOST_AVAILABLE:
-    models_dict['XGBoost MultiOutput'] = xgb_trained
-
-if LIGHTGBM_AVAILABLE:
-    models_dict['LightGBM MultiOutput'] = lgb_trained
 
 best_model = models_dict[best_model_name]
 model_filename = f"models/best_multi_output_model_{best_model_name.lower().replace(' ', '_')}.pkl"
@@ -605,9 +579,6 @@ print(f" Engagement Rate MAPE: {best_metrics['engagement_rate_mape']:.2f}%")
 print(f" Average Test R²: {best_avg_r2:.4f}")
 
 print("\n Files Generated:")
-print("  - results/multi_output_target_distributions.png")
-print("  - results/multi_output_model_comparison.png")
-print("  - results/multi_output_model_comparison.csv")
 print(f"  - {model_filename}")
 print("  - models/multi_output_model_metadata.json (includes preprocessing metadata)")
-print("\n Note: Preprocessor and processed data kept in memory (not saved to disk)")
+print("\n Note: Visualizations, comparisons, preprocessor, and processed data kept in memory (not saved to disk)")

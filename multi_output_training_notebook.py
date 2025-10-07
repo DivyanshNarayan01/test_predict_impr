@@ -47,22 +47,9 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import XGBoost and LightGBM (with safety checks)
-try:
-    import xgboost as xgb
-    XGBOOST_AVAILABLE = True
-    print(" XGBoost available")
-except ImportError:
-    print("  XGBoost not installed. Install with: pip install xgboost")
-    XGBOOST_AVAILABLE = False
-
-try:
-    import lightgbm as lgb
-    LIGHTGBM_AVAILABLE = True
-    print(" LightGBM available")
-except ImportError:
-    print("  LightGBM not installed. Install with: pip install lightgbm")
-    LIGHTGBM_AVAILABLE = False
+# Import XGBoost and LightGBM
+import xgboost as xgb
+import lightgbm as lgb
 
 # Configure display settings
 pd.set_option('display.max_columns', None)
@@ -70,7 +57,7 @@ plt.style.use('default')
 sns.set_palette('husl')
 
 print("\n All libraries imported successfully!")
-print(f" Available models: Random Forest, XGBoost={XGBOOST_AVAILABLE}, LightGBM={LIGHTGBM_AVAILABLE}")
+print(" Available models: Random Forest, XGBoost, LightGBM")
 
 
 # =============================================================================
@@ -204,8 +191,8 @@ axes[1, 2].set_xlabel('Log(Impressions + 1)')
 axes[1, 2].set_ylabel('Log(Engagement + 1)')
 
 plt.tight_layout()
-plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
-print(" Visualization saved to: results/multi_output_target_distributions.png")
+# plt.savefig('results/multi_output_target_distributions.png', dpi=100, bbox_inches='tight')
+print(" Visualization generated (not saved to disk)")
 plt.show()
 
 
@@ -514,38 +501,34 @@ print("\n Random Forest training complete")
 #  Expected output: Detailed performance metrics with R² scores
 #   Note: Only runs if XGBoost is installed
 
-if XGBOOST_AVAILABLE:
-    print("\n" + "=" * 80)
-    print("MODEL TRAINING - XGBOOST")
-    print("=" * 80)
+print("\n" + "=" * 80)
+print("MODEL TRAINING - XGBOOST")
+print("=" * 80)
 
-    # Configure XGBoost
-    xgb_base = xgb.XGBRegressor(
-        n_estimators=100,      # Number of boosting rounds
-        max_depth=5,           # Maximum tree depth
-        learning_rate=0.1,     # Step size for each iteration
-        subsample=0.8,         # Fraction of samples used per tree
-        colsample_bytree=0.8,  # Fraction of features used per tree
-        random_state=42,
-        n_jobs=-1
-    )
+# Configure XGBoost
+xgb_base = xgb.XGBRegressor(
+    n_estimators=100,      # Number of boosting rounds
+    max_depth=5,           # Maximum tree depth
+    learning_rate=0.1,     # Step size for each iteration
+    subsample=0.8,         # Fraction of samples used per tree
+    colsample_bytree=0.8,  # Fraction of features used per tree
+    random_state=42,
+    n_jobs=-1
+)
 
-    # Wrap in MultiOutputRegressor
-    xgb_model = MultiOutputRegressor(xgb_base, n_jobs=1)
+# Wrap in MultiOutputRegressor
+xgb_model = MultiOutputRegressor(xgb_base, n_jobs=1)
 
-    # Train and evaluate
-    xgb_metrics, xgb_trained = evaluate_multi_output_model(
-        xgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
-        "XGBoost MultiOutput"
-    )
+# Train and evaluate
+xgb_metrics, xgb_trained = evaluate_multi_output_model(
+    xgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
+    "XGBoost MultiOutput"
+)
 
-    print_multi_output_results(xgb_metrics)
-    all_results.append(xgb_metrics)
+print_multi_output_results(xgb_metrics)
+all_results.append(xgb_metrics)
 
-    print("\n XGBoost training complete")
-else:
-    print("\n  XGBoost not available - skipping")
-    xgb_trained = None
+print("\n XGBoost training complete")
 
 
 # =============================================================================
@@ -560,40 +543,36 @@ else:
 #  Expected output: Detailed performance metrics with R² scores
 #   Note: Only runs if LightGBM is installed
 
-if LIGHTGBM_AVAILABLE:
-    print("\n" + "=" * 80)
-    print("MODEL TRAINING - LIGHTGBM")
-    print("=" * 80)
+print("\n" + "=" * 80)
+print("MODEL TRAINING - LIGHTGBM")
+print("=" * 80)
 
-    # Configure LightGBM
-    lgb_base = lgb.LGBMRegressor(
-        objective='regression',
-        n_estimators=100,      # Number of boosting rounds
-        num_leaves=31,         # Maximum leaves per tree
-        learning_rate=0.1,     # Step size
-        subsample=0.8,         # Fraction of samples
-        colsample_bytree=0.8,  # Fraction of features
-        random_state=42,
-        n_jobs=-1,
-        verbose=-1             # Suppress output
-    )
+# Configure LightGBM
+lgb_base = lgb.LGBMRegressor(
+    objective='regression',
+    n_estimators=100,      # Number of boosting rounds
+    num_leaves=31,         # Maximum leaves per tree
+    learning_rate=0.1,     # Step size
+    subsample=0.8,         # Fraction of samples
+    colsample_bytree=0.8,  # Fraction of features
+    random_state=42,
+    n_jobs=-1,
+    verbose=-1             # Suppress output
+)
 
-    # Wrap in MultiOutputRegressor
-    lgb_model = MultiOutputRegressor(lgb_base, n_jobs=1)
+# Wrap in MultiOutputRegressor
+lgb_model = MultiOutputRegressor(lgb_base, n_jobs=1)
 
-    # Train and evaluate
-    lgb_metrics, lgb_trained = evaluate_multi_output_model(
-        lgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
-        "LightGBM MultiOutput"
-    )
+# Train and evaluate
+lgb_metrics, lgb_trained = evaluate_multi_output_model(
+    lgb_model, X_train_processed_array, y_train_array, X_test_processed_array, y_test_array,
+    "LightGBM MultiOutput"
+)
 
-    print_multi_output_results(lgb_metrics)
-    all_results.append(lgb_metrics)
+print_multi_output_results(lgb_metrics)
+all_results.append(lgb_metrics)
 
-    print("\n LightGBM training complete")
-else:
-    print("\n  LightGBM not available - skipping")
-    lgb_trained = None
+print("\n LightGBM training complete")
 
 
 # =============================================================================
@@ -635,9 +614,8 @@ comparison_df = comparison_df.sort_values('Avg_Test_R2', ascending=False)
 print("\n Model Comparison Summary:")
 print(comparison_df.to_string(index=False))
 
-# Save comparison
-comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
-print("\n Comparison saved to: results/multi_output_model_comparison.csv")
+# comparison_df.to_csv('results/multi_output_model_comparison.csv', index=False)
+print("\n Model comparison generated (not saved to disk)")
 
 # Highlight winner
 best_model_name = comparison_df.iloc[0]['Model']
@@ -711,8 +689,8 @@ axes[1, 2].tick_params(axis='x', rotation=15)
 axes[1, 2].grid(axis='y', alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
-print(" Visualization saved to: results/multi_output_model_comparison.png")
+# plt.savefig('results/multi_output_model_comparison.png', dpi=100, bbox_inches='tight')
+print(" Visualization generated (not saved to disk)")
 plt.show()
 
 
@@ -742,13 +720,9 @@ print(f"   Average Test R²: {best_avg_r2:.4f}")
 # Map model names to trained model objects
 models_dict = {
     'Random Forest MultiOutput': rf_trained,
+    'XGBoost MultiOutput': xgb_trained,
+    'LightGBM MultiOutput': lgb_trained
 }
-
-if XGBOOST_AVAILABLE:
-    models_dict['XGBoost MultiOutput'] = xgb_trained
-
-if LIGHTGBM_AVAILABLE:
-    models_dict['LightGBM MultiOutput'] = lgb_trained
 
 # Save best model
 best_model = models_dict[best_model_name]
@@ -814,21 +788,16 @@ print(f"   Engagement Rate MAPE: {best_metrics['engagement_rate_mape']:.2f}%")
 print(f"   Average Test R²: {best_avg_r2:.4f}")
 
 print("\n Files Generated:")
-print("    Visualizations:")
-print("      - results/multi_output_target_distributions.png")
-print("      - results/multi_output_model_comparison.png")
-print("    Results:")
-print("      - results/multi_output_model_comparison.csv")
 print("   🤖 Models:")
 print(f"      - {model_filename}")
 print("      - models/multi_output_model_metadata.json (includes preprocessing metadata)")
 print("    Data:")
 print("      - data/campaign_data_multi_output_engineered.csv")
-print("\n Note: Preprocessor and processed data kept in memory (not saved to disk)")
+print("\n Note: Visualizations, comparisons, preprocessor, and processed data kept in memory (not saved to disk)")
 
 print("\n" + "=" * 80)
 print("Next Steps:")
-print("  1. Review comparison chart: results/multi_output_model_comparison.png")
+print("  1. Review model metrics printed above")
 print("  2. Inspect metadata: models/multi_output_model_metadata.json")
 print("  3. Use best model in production via predict_api.py")
 print("=" * 80)

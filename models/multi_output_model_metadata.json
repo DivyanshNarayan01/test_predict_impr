@@ -10,18 +10,18 @@
     "target_variables": 2
   },
   "impressions": {
-    "test_r2": 0.16544863943158783,
+    "test_r2": 0.16544863943158816,
     "test_mae": 239241.2143063045,
-    "test_rmse": 381646.4062233876,
+    "test_rmse": 381646.4062233875,
     "test_mape": 54.81172575693415
   },
   "engagement": {
-    "test_r2": 0.2828951230409269,
-    "test_mae": 17339.235688743516,
-    "test_rmse": 32251.28805600323,
-    "test_mape": 60.331779495371265
+    "test_r2": 0.28289512304092657,
+    "test_mae": 17339.235688743513,
+    "test_rmse": 32251.28805600324,
+    "test_mape": 60.33177949537125
   },
-  "engagement_rate_mape": 27.160594885248106,
+  "engagement_rate_mape": 27.16059488524812,
   "preprocessing": {
     "feature_columns": [
       "Log_Spend_Total",
