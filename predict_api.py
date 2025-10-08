@@ -354,12 +354,12 @@ def predict_campaign_metrics(
             "predictions": {
                 "impressions": int(round(impressions_pred)),
                 "engagement": int(round(engagement_pred)),
-                "engagement_rate": round(engagement_rate, 4),
+                "engagement_rate": float(round(engagement_rate, 4)),
                 "engagement_rate_pct": f"{engagement_rate * 100:.2f}%"
             },
             "metrics": {
-                "cpm": round(cpm, 2),  # Cost per 1000 impressions
-                "cost_per_engagement": round(cost_per_engagement, 2)
+                "cpm": float(round(cpm, 2)),  # Cost per 1000 impressions
+                "cost_per_engagement": float(round(cost_per_engagement, 2))
             }
         }
 
