@@ -110,7 +110,8 @@ categorical_cols_to_clean = ['Platform', 'campaign_type', 'content_type']
 
 for col in categorical_cols_to_clean:
     if col in df.columns:
-        df[col] = df[col].astype(str).str.strip().str.title()
+        # Only strip whitespace, preserve UPPERCASE from data
+        df[col] = df[col].astype(str).str.strip().str.upper()
 
 # Calculate engagement rate
 df['Engagement_Rate'] = df['Engagement'] / df['Impressions']

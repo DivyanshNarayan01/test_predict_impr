@@ -71,16 +71,16 @@ def validate_inputs(
     if total_spend > 1_000_000:
         raise ValidationError(f"total_spend exceeds maximum allowed (1,000,000), got {total_spend}")
 
-    # Valid categorical values (based on training data)
-    VALID_PLATFORMS = ['Meta', 'TikTok', 'Instagram']
-    VALID_CAMPAIGN_TYPES = ['Bau', 'Mm', 'Flood The Feed']
+    # Valid categorical values (based on training data - UPPERCASE)
+    VALID_PLATFORMS = ['META', 'TIKTOK', 'INSTAGRAM']
+    VALID_CAMPAIGN_TYPES = ['BAU', 'MM', 'FLOOD THE FEED']
     VALID_CONTENT_TYPES = [
-        'Influencer - Cfg - Boosted Only',
-        'Influencer - Ogilvy - Organic Only',
-        'Owned - Boosted Only',
-        'Owned - Organic Only',
-        'Paid - Brand',
-        'Paid - Partnership'
+        'INFLUENCER - CFG - BOOSTED ONLY',
+        'INFLUENCER - OGILVY - ORGANIC ONLY',
+        'INFLUENCER - OGILVY - BOOSTED ONLY',
+        'OWNED - BOOSTED ONLY',
+        'PAID - BRAND',
+        'PAID - PARTNERSHIP'
     ]
 
     # Validate categorical inputs
@@ -102,7 +102,7 @@ def validate_inputs(
 
 def preprocess_features(campaign_df: pd.DataFrame, preprocessing_metadata: dict) -> np.ndarray:
     """
-    Recreate preprocessing using pure pandas (no saved preprocessor needed).
+    Recreate preprocessing using manual one-hot encoding (fixes single-row encoding bug).
 
     Args:
         campaign_df: DataFrame with raw features
@@ -120,18 +120,32 @@ def preprocess_features(campaign_df: pd.DataFrame, preprocessing_metadata: dict)
         scaler_std = preprocessing_metadata['scaler_std']
         expected_columns = preprocessing_metadata['feature_columns']
 
-        # 1. One-hot encode categorical features
-        df_encoded = pd.get_dummies(campaign_df, columns=categorical_features, drop_first=True)
+        # Create a dictionary to hold the encoded features
+        # Start with the numerical feature
+        encoded_data = {
+            'Log_Spend_Total': campaign_df['Log_Spend_Total'].values[0]
+        }
 
-        # 2. Ensure all expected columns are present (add missing ones with 0)
+        # Manually create one-hot encoded columns
+        # Initialize all categorical columns to 0
         for col in expected_columns:
-            if col not in df_encoded.columns:
-                df_encoded[col] = 0
+            if col != 'Log_Spend_Total':
+                encoded_data[col] = 0
 
-        # 3. Reorder columns to match training data
-        df_encoded = df_encoded[expected_columns]
+        # Set the appropriate one-hot encoded columns to 1 based on input values
+        for cat_feature in categorical_features:
+            value = campaign_df[cat_feature].values[0]
+            # Create column name in the format: feature_value
+            # Note: pd.get_dummies with drop_first=True drops the first category
+            # We need to match this behavior
+            column_name = f"{cat_feature}_{value}"
+            if column_name in expected_columns:
+                encoded_data[column_name] = 1
 
-        # 4. Standardize numerical feature
+        # Create DataFrame with proper column order
+        df_encoded = pd.DataFrame([encoded_data])[expected_columns]
+
+        # Standardize numerical feature
         df_encoded['Log_Spend_Total'] = (df_encoded['Log_Spend_Total'] - scaler_mean) / scaler_std
 
         return df_encoded.values
@@ -193,9 +207,9 @@ def load_model_artifacts(models_dir: str = 'models') -> tuple:
 
 def predict_campaign_metrics(
     total_spend: float,
-    platform: str = "TikTok",
-    campaign_type: str = "Flood The Feed",
-    content_type: str = "Influencer - Cfg - Boosted Only",
+    platform: str = "TIKTOK",
+    campaign_type: str = "FLOOD THE FEED",
+    content_type: str = "INFLUENCER - CFG - BOOSTED ONLY",
     models_dir: str = "models",
     return_format: str = "dict"
 ) -> Union[Dict, str]:
@@ -204,15 +218,15 @@ def predict_campaign_metrics(
 
     Args:
         total_spend: Campaign budget in dollars (must be > 0)
-        platform: Social media platform - one of ['Meta', 'TikTok', 'Instagram']
-        campaign_type: Campaign strategy - one of ['Bau', 'Mm', 'Flood The Feed']
+        platform: Social media platform - one of ['META', 'TIKTOK', 'INSTAGRAM']
+        campaign_type: Campaign strategy - one of ['BAU', 'MM', 'FLOOD THE FEED']
         content_type: Content classification - one of:
-            - 'Influencer - Cfg - Boosted Only'
-            - 'Influencer - Ogilvy - Organic Only'
-            - 'Owned - Boosted Only'
-            - 'Owned - Organic Only'
-            - 'Paid - Brand'
-            - 'Paid - Partnership'
+            - 'INFLUENCER - CFG - BOOSTED ONLY'
+            - 'INFLUENCER - OGILVY - ORGANIC ONLY'
+            - 'INFLUENCER - OGILVY - BOOSTED ONLY'
+            - 'OWNED - BOOSTED ONLY'
+            - 'PAID - BRAND'
+            - 'PAID - PARTNERSHIP'
         models_dir: Directory containing model files (default: 'models')
         return_format: Output format - 'dict' or 'json' (default: 'dict')
 
@@ -250,9 +264,9 @@ def predict_campaign_metrics(
         >>> # Custom campaign
         >>> result = predict_campaign_metrics(
         ...     total_spend=5000.0,
-        ...     platform="Instagram",
-        ...     campaign_type="Bau",
-        ...     content_type="Paid - Brand"
+        ...     platform="INSTAGRAM",
+        ...     campaign_type="BAU",
+        ...     content_type="PAID - BRAND"
         ... )
 
         >>> # Get JSON output
@@ -429,9 +443,9 @@ def main():
     print("-" * 80)
     result2 = predict_campaign_metrics(
         total_spend=5000.0,
-        platform="Instagram",
-        campaign_type="Bau",
-        content_type="Paid - Brand"
+        platform="INSTAGRAM",
+        campaign_type="BAU",
+        content_type="PAID - BRAND"
     )
     print(json.dumps(result2, indent=2))
 
@@ -440,8 +454,8 @@ def main():
     print("-" * 80)
     result3 = predict_campaign_metrics(
         total_spend=15000.0,
-        platform="TikTok",
-        content_type="Influencer - Cfg - Boosted Only",
+        platform="TIKTOK",
+        content_type="INFLUENCER - CFG - BOOSTED ONLY",
         return_format="json"
     )
     print(result3)
@@ -451,7 +465,7 @@ def main():
     print("-" * 80)
     result4 = predict_campaign_metrics(
         total_spend=5000.0,
-        platform="YouTube"  # Invalid
+        platform="YOUTUBE"  # Invalid
     )
     print(json.dumps(result4, indent=2))
 

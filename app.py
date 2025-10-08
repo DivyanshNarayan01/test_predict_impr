@@ -56,9 +56,9 @@ def predict():
         # Make prediction
         result = predict_campaign_metrics(
             total_spend=data.get('total_spend'),
-            platform=data.get('platform', 'TikTok'),
-            campaign_type=data.get('campaign_type', 'Flood The Feed'),
-            content_type=data.get('content_type', 'Influencer - Cfg - Boosted Only'),
+            platform=data.get('platform', 'TIKTOK'),
+            campaign_type=data.get('campaign_type', 'FLOOD THE FEED'),
+            content_type=data.get('content_type', 'INFLUENCER - CFG - BOOSTED ONLY'),
             return_format='dict'
         )
 
@@ -82,15 +82,15 @@ def predict():
 def get_options():
     """Return valid options for dropdown menus."""
     return jsonify({
-        "platforms": ["Meta", "TikTok", "Instagram"],
-        "campaign_types": ["Bau", "Mm", "Flood The Feed"],
+        "platforms": ["META", "TIKTOK", "INSTAGRAM"],
+        "campaign_types": ["BAU", "MM", "FLOOD THE FEED"],
         "content_types": [
-            "Influencer - Cfg - Boosted Only",
-            "Influencer - Ogilvy - Organic Only",
-            "Owned - Boosted Only",
-            "Owned - Organic Only",
-            "Paid - Brand",
-            "Paid - Partnership"
+            "INFLUENCER - CFG - BOOSTED ONLY",
+            "INFLUENCER - OGILVY - ORGANIC ONLY",
+            "INFLUENCER - OGILVY - BOOSTED ONLY",
+            "OWNED - BOOSTED ONLY",
+            "PAID - BRAND",
+            "PAID - PARTNERSHIP"
         ]
     }), 200
 

@@ -17,119 +17,119 @@ def generate_dummy_campaign_data(n_samples=1000):
  - No Content_Theme, Content_Details, OPE, Influencer_Name, Spend_Production, Spend_Media
  """
 
- # Define possible values for categorical features
- platforms = ['Meta', 'TikTok', 'Instagram']
- campaign_types = ['Bau', 'Mm', 'Flood The Feed']
+ # Define possible values for categorical features (UPPERCASE matching production data)
+ platforms = ['META', 'TIKTOK', 'INSTAGRAM']
+ campaign_types = ['BAU', 'MM', 'FLOOD THE FEED']
 
  content_types = [
- 'Paid - Brand',
- 'Influencer - Cfg - Boosted Only',
- 'Paid - Partnership',
- 'Owned - Boosted Only',
- 'Influencer - Ogilvy - Organic Only',
- 'Influencer - Ogilvy - Boosted Only'
+ 'PAID - BRAND',
+ 'INFLUENCER - CFG - BOOSTED ONLY',
+ 'PAID - PARTNERSHIP',
+ 'OWNED - BOOSTED ONLY',
+ 'INFLUENCER - OGILVY - ORGANIC ONLY',
+ 'INFLUENCER - OGILVY - BOOSTED ONLY'
  ]
 
  # Generate the dataset
  data = []
 
  for i in range(n_samples):
- # Basic campaign features
- platform = random.choice(platforms)
- campaign_type = random.choice(campaign_types)
- content_type = random.choice(content_types)
+     # Basic campaign features
+     platform = random.choice(platforms)
+     campaign_type = random.choice(campaign_types)
+     content_type = random.choice(content_types)
 
- # Total spend variable
- # Different content types have different spend patterns
- if 'Organic' in content_type:
- # Organic content has minimal spend
- total_spend = np.random.lognormal(5, 1) # Lower spend
- elif 'Boosted' in content_type or 'Paid' in content_type:
- # Boosted and Paid content have higher spend
- total_spend = np.random.lognormal(8, 1.5)
- else:
- total_spend = np.random.lognormal(7, 1)
+     # Total spend variable
+     # Different content types have different spend patterns
+     if 'ORGANIC' in content_type:
+         # Organic content has minimal spend
+         total_spend = np.random.lognormal(5, 1) # Lower spend
+     elif 'BOOSTED' in content_type or 'PAID' in content_type:
+         # Boosted and Paid content have higher spend
+         total_spend = np.random.lognormal(8, 1.5)
+     else:
+         total_spend = np.random.lognormal(7, 1)
 
- # Generate Impressions based on realistic patterns
- base_impressions = 50000 # Base impression count
+     # Generate Impressions based on realistic patterns
+     base_impressions = 50000 # Base impression count
 
- # Platform multipliers
- platform_multipliers = {
- 'Meta': 2.5,
- 'TikTok': 3.5,
- 'Instagram': 2.0
- }
+     # Platform multipliers
+     platform_multipliers = {
+         'META': 2.5,
+         'TIKTOK': 3.5,
+         'INSTAGRAM': 2.0
+     }
 
- # Campaign type effects
- campaign_multipliers = {'Bau': 1.0, 'Mm': 1.2, 'Flood The Feed': 1.8}
+     # Campaign type effects
+     campaign_multipliers = {'BAU': 1.0, 'MM': 1.2, 'FLOOD THE FEED': 1.8}
 
- # Content type effects
- content_multipliers = {
- 'Paid - Brand': 1.5,
- 'Influencer - Cfg - Boosted Only': 2.0,
- 'Paid - Partnership': 1.4,
- 'Owned - Boosted Only': 1.2,
- 'Influencer - Ogilvy - Organic Only': 0.8,
- 'Influencer - Ogilvy - Boosted Only': 1.6
- }
+     # Content type effects
+     content_multipliers = {
+         'PAID - BRAND': 1.5,
+         'INFLUENCER - CFG - BOOSTED ONLY': 2.0,
+         'PAID - PARTNERSHIP': 1.4,
+         'OWNED - BOOSTED ONLY': 1.2,
+         'INFLUENCER - OGILVY - ORGANIC ONLY': 0.8,
+         'INFLUENCER - OGILVY - BOOSTED ONLY': 1.6
+     }
 
- # Calculate impressions with some randomness
- impressions_multiplier = (
- platform_multipliers.get(platform, 1.0) *
- campaign_multipliers.get(campaign_type, 1.0) *
- content_multipliers.get(content_type, 1.0) *
- (1 + np.log(total_spend + 1) / 12) # Spend effect with diminishing returns
- )
+     # Calculate impressions with some randomness
+     impressions_multiplier = (
+         platform_multipliers.get(platform, 1.0) *
+         campaign_multipliers.get(campaign_type, 1.0) *
+         content_multipliers.get(content_type, 1.0) *
+         (1 + np.log(total_spend + 1) / 12) # Spend effect with diminishing returns
+     )
 
- impressions = int(base_impressions * impressions_multiplier * np.random.lognormal(0, 0.6))
- impressions = max(1000, impressions) # Minimum 1000 impressions
+     impressions = int(base_impressions * impressions_multiplier * np.random.lognormal(0, 0.6))
+     impressions = max(1000, impressions) # Minimum 1000 impressions
 
- # Generate Engagement based on Impressions
- # Engagement = aggregate of (Likes + Shares + Comments + Saves)
- # Industry standard: 2-8% engagement rate, varies by platform and content
+     # Generate Engagement based on Impressions
+     # Engagement = aggregate of (Likes + Shares + Comments + Saves)
+     # Industry standard: 2-8% engagement rate, varies by platform and content
 
- base_engagement_rate = 0.04 # 4% base rate
+     base_engagement_rate = 0.04 # 4% base rate
 
- # Platform engagement multipliers (TikTok has highest engagement)
- platform_engagement_multipliers = {
- 'TikTok': 1.5, # ~6% engagement rate
- 'Instagram': 1.2, # ~4.8% engagement rate
- 'Meta': 0.9 # ~3.6% engagement rate
- }
+     # Platform engagement multipliers (TIKTOK has highest engagement)
+     platform_engagement_multipliers = {
+         'TIKTOK': 1.5, # ~6% engagement rate
+         'INSTAGRAM': 1.2, # ~4.8% engagement rate
+         'META': 0.9 # ~3.6% engagement rate
+     }
 
- # Content type engagement multipliers
- content_engagement_multipliers = {
- 'Influencer - Cfg - Boosted Only': 1.6, # High engagement
- 'Influencer - Ogilvy - Organic Only': 1.4, # Good organic engagement
- 'Influencer - Ogilvy - Boosted Only': 1.5,
- 'Owned - Boosted Only': 1.1,
- 'Paid - Partnership': 1.0,
- 'Paid - Brand': 0.8 # Lower engagement for paid ads
- }
+     # Content type engagement multipliers
+     content_engagement_multipliers = {
+         'INFLUENCER - CFG - BOOSTED ONLY': 1.6, # High engagement
+         'INFLUENCER - OGILVY - ORGANIC ONLY': 1.4, # Good organic engagement
+         'INFLUENCER - OGILVY - BOOSTED ONLY': 1.5,
+         'OWNED - BOOSTED ONLY': 1.1,
+         'PAID - PARTNERSHIP': 1.0,
+         'PAID - BRAND': 0.8 # Lower engagement for paid ads
+     }
 
- # Calculate engagement rate with variability
- engagement_rate = (
- base_engagement_rate *
- platform_engagement_multipliers.get(platform, 1.0) *
- content_engagement_multipliers.get(content_type, 1.0) *
- np.random.lognormal(0, 0.3) # Add realistic noise
- )
+     # Calculate engagement rate with variability
+     engagement_rate = (
+         base_engagement_rate *
+         platform_engagement_multipliers.get(platform, 1.0) *
+         content_engagement_multipliers.get(content_type, 1.0) *
+         np.random.lognormal(0, 0.3) # Add realistic noise
+     )
 
- # Clip engagement rate to realistic bounds (0.5% - 15%)
- engagement_rate = np.clip(engagement_rate, 0.005, 0.15)
+     # Clip engagement rate to realistic bounds (0.5% - 15%)
+     engagement_rate = np.clip(engagement_rate, 0.005, 0.15)
 
- # Calculate aggregate engagement (Likes + Shares + Comments + Saves)
- engagement = int(impressions * engagement_rate)
- engagement = max(50, engagement) # Minimum 50 engagements
+     # Calculate aggregate engagement (Likes + Shares + Comments + Saves)
+     engagement = int(impressions * engagement_rate)
+     engagement = max(50, engagement) # Minimum 50 engagements
 
- data.append({
- 'campaign_type': campaign_type,
- 'Platform': platform,
- 'content_type': content_type,
- 'total_spend': round(total_spend, 2),
- 'Impressions': impressions,
- 'Engagement': engagement
- })
+     data.append({
+         'campaign_type': campaign_type,
+         'Platform': platform,
+         'content_type': content_type,
+         'total_spend': round(total_spend, 2),
+         'Impressions': impressions,
+         'Engagement': engagement
+     })
 
  return pd.DataFrame(data)
 
