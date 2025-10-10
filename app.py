@@ -123,6 +123,55 @@ def get_model_info():
         }), 500
 
 
+@app.route('/api/training-data', methods=['GET'])
+def get_training_data():
+    """Get training data for visualization."""
+    try:
+        import pandas as pd
+        import numpy as np
+
+        # Load training data
+        data_file = os.path.join(BASE_DIR, 'data', 'campaign_data.csv')
+
+        if not os.path.exists(data_file):
+            return jsonify({
+                "status": "error",
+                "error_message": "Training data file not found"
+            }), 404
+
+        df = pd.read_csv(data_file)
+
+        # Calculate log-transformed values
+        df['log_spend'] = np.log(df['total_spend'] + 1)
+        df['log_impressions'] = np.log(df['Impressions'] + 1)
+
+        # Prepare data for scatter plot
+        training_data = []
+        for _, row in df.iterrows():
+            training_data.append({
+                'x': float(row['log_spend']),
+                'y': float(row['log_impressions']),
+                'platform': row['Platform'],
+                'campaign_type': row['campaign_type'],
+                'content_type': row['content_type'],
+                'spend': float(row['total_spend']),
+                'impressions': int(row['Impressions'])
+            })
+
+        return jsonify({
+            "status": "success",
+            "data": training_data,
+            "count": len(training_data)
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error loading training data: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "error_message": f"Failed to load training data: {str(e)}"
+        }), 500
+
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""

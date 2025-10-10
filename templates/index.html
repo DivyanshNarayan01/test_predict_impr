@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -412,6 +413,35 @@
         .container {
             box-shadow: 0 1px 6px rgba(0,0,0,0.12);
         }
+
+        /* Visualization Section */
+        .visualization-section {
+            margin-top: 24px;
+            padding: 24px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #dadce0;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+        }
+
+        .visualization-section h3 {
+            margin-bottom: 16px;
+            font-size: 16px;
+            color: #202124;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .confidence-interval {
+            font-size: 11px;
+            color: #5f6368;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -488,6 +518,14 @@
             </div>
         </div>
 
+            <!-- Visualization Section -->
+            <div class="visualization-section">
+                <h3>Training Data Visualization: Log Relationship Between Total Spend and Impressions</h3>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+
             <!-- Statistics Footer -->
             <div class="stats-footer">
                 <h3>Model Information & Statistical Metrics</h3>
@@ -508,9 +546,8 @@
                 <div class="stat-section">
                     <h4 style="color: #1967d2; font-size: 14px; margin-bottom: 12px; margin-top: 20px; font-weight: 600;">Model Performance (Test Set)</h4>
                     <div class="stats-grid">
-                        <div class="stat-item"><strong>Average R² Score:</strong> <span id="avg-r2">Loading...</span></div>
+                        <div class="stat-item"><strong>Confidence Interval (Impressions):</strong> <span id="confidence-interval">Loading...</span></div>
                         <div class="stat-item"><strong>Impressions R²:</strong> <span id="impressions-r2">Loading...</span></div>
-                        <div class="stat-item"><strong>Engagement R²:</strong> <span id="engagement-r2">Loading...</span></div>
                     </div>
                 </div>
 
@@ -531,6 +568,8 @@
         ];
 
         let rowCounter = 0;
+        let scatterChart = null;
+        let trainingData = [];
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMsg');
@@ -841,6 +880,160 @@
             showSuccess('All campaigns cleared');
         }
 
+        function updateScatterChart() {
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (scatterChart) {
+                scatterChart.destroy();
+            }
+
+            // If no training data loaded yet, show loading message
+            if (trainingData.length === 0) {
+                scatterChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'No Data',
+                            data: [],
+                            backgroundColor: 'rgba(25, 103, 210, 0.6)',
+                            borderColor: 'rgba(25, 103, 210, 1)',
+                            borderWidth: 2,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Loading training data...',
+                                font: { size: 14 }
+                            },
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Log(Total Spend + 1)'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Log(Impressions + 1)'
+                                }
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+
+            // Create chart with training data
+            scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Training Data (1000 campaigns)',
+                        data: trainingData,
+                        backgroundColor: 'rgba(25, 103, 210, 0.4)',
+                        borderColor: 'rgba(25, 103, 210, 0.8)',
+                        borderWidth: 1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Historical Training Data: Log Relationship Between Total Spend and Impressions',
+                            font: { size: 14, weight: 'normal' },
+                            color: '#202124'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return [
+                                        `Platform: ${point.platform}`,
+                                        `Campaign: ${point.campaign_type}`,
+                                        `Content: ${point.content_type}`,
+                                        `Spend: $${point.spend.toLocaleString()}`,
+                                        `Impressions: ${point.impressions.toLocaleString()}`,
+                                        ``,
+                                        `Log(Spend): ${point.x.toFixed(2)}`,
+                                        `Log(Impressions): ${point.y.toFixed(2)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Log(Total Spend + 1)',
+                                font: { size: 13, weight: '500' },
+                                color: '#5f6368'
+                            },
+                            grid: {
+                                color: '#e8eaed'
+                            },
+                            ticks: {
+                                color: '#5f6368'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Log(Impressions + 1)',
+                                font: { size: 13, weight: '500' },
+                                color: '#5f6368'
+                            },
+                            grid: {
+                                color: '#e8eaed'
+                            },
+                            ticks: {
+                                color: '#5f6368'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load training data for visualization
+        async function loadTrainingData() {
+            try {
+                const response = await fetch('/api/training-data');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.data) {
+                    trainingData = result.data;
+                    updateScatterChart();
+                } else {
+                    console.error('Failed to load training data:', result);
+                }
+            } catch (error) {
+                console.error('Error fetching training data:', error);
+            }
+        }
+
         // Update budget allocations when overall budget changes
         document.getElementById('totalBudget').addEventListener('input', function() {
             const tbody = document.getElementById('campaignTableBody');
@@ -868,9 +1061,10 @@
                     document.getElementById('targets-count').textContent = info.dataset?.target_variables || 2;
 
                     // Update model performance
-                    document.getElementById('avg-r2').textContent = (info.avg_test_r2 || 0).toFixed(3);
+                    // Use impressions MAPE only for confidence interval
+                    const impressionsMAPE = info.impressions?.test_mape || 0;
+                    document.getElementById('confidence-interval').textContent = `±${impressionsMAPE.toFixed(0)}%`;
                     document.getElementById('impressions-r2').textContent = (info.impressions?.test_r2 || 0).toFixed(3);
-                    document.getElementById('engagement-r2').textContent = (info.engagement?.test_r2 || 0).toFixed(3);
                 } else {
                     console.error('Failed to load model info:', data);
                 }
@@ -885,6 +1079,7 @@
             updateEmptyState();
             updateTotals();
             loadModelInfo();
+            loadTrainingData();
         };
     </script>
 </body>
