@@ -130,8 +130,8 @@ def get_training_data():
         import pandas as pd
         import numpy as np
 
-        # Load training data
-        data_file = os.path.join(BASE_DIR, 'data', 'campaign_data.csv')
+        # Load training data (same file used by multi_output_training.py)
+        data_file = os.path.join(BASE_DIR, 'data', 'input_data.csv')
 
         if not os.path.exists(data_file):
             return jsonify({

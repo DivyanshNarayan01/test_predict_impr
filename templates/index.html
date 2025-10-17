@@ -546,8 +546,9 @@
                 <div class="stat-section">
                     <h4 style="color: #1967d2; font-size: 14px; margin-bottom: 12px; margin-top: 20px; font-weight: 600;">Model Performance (Test Set)</h4>
                     <div class="stats-grid">
-                        <div class="stat-item"><strong>Confidence Interval (Impressions):</strong> <span id="confidence-interval">Loading...</span></div>
                         <div class="stat-item"><strong>Impressions R²:</strong> <span id="impressions-r2">Loading...</span></div>
+                        <div class="stat-item"><strong>Engagement R²:</strong> <span id="engagement-r2">Loading...</span></div>
+                        <div class="stat-item"><strong>Confidence Interval (Impressions):</strong> <span id="confidence-interval">Loading...</span></div>
                     </div>
                 </div>
 
@@ -1065,6 +1066,7 @@
                     const impressionsMAPE = info.impressions?.test_mape || 0;
                     document.getElementById('confidence-interval').textContent = `±${impressionsMAPE.toFixed(0)}%`;
                     document.getElementById('impressions-r2').textContent = (info.impressions?.test_r2 || 0).toFixed(3);
+                    document.getElementById('engagement-r2').textContent = (info.engagement?.test_r2 || 0).toFixed(3);
                 } else {
                     console.error('Failed to load model info:', data);
                 }
