@@ -6,6 +6,12 @@ MULTI-OUTPUT VERSION:
 - Target variables: Impressions AND Engagement (simultaneous prediction)
 - Models: XGBoost MultiOutputRegressor, LightGBM Native, Random Forest MultiOutput
 - Comparison of all three approaches with comprehensive metrics
+- OPTIONAL: GridSearch hyperparameter optimization for best model
+
+USAGE:
+    python multi_output_training.py                  # Normal training (~1 min)
+    python multi_output_training.py --gridsearch     # With GridSearch optimization (~20-30 min)
+    python multi_output_training.py --gridsearch quick  # Quick GridSearch (~5-10 min)
 
 =============================================================================
 JUPYTER NOTEBOOK USAGE:
@@ -36,18 +42,39 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, make_scorer
 import joblib
 import json
 import warnings
+import argparse
+import time
+from datetime import datetime
 warnings.filterwarnings('ignore')
 
 # Import XGBoost and LightGBM
 import xgboost as xgb
 import lightgbm as lgb
+
+# =============================================================================
+# PARSE COMMAND-LINE ARGUMENTS
+# =============================================================================
+parser = argparse.ArgumentParser(description='Train multi-output campaign prediction models')
+parser.add_argument('--gridsearch', nargs='?', const='full', choices=['quick', 'full'],
+                    help='Enable GridSearch optimization: "quick" (~5-10 min) or "full" (~20-30 min)')
+args = parser.parse_args()
+
+USE_GRIDSEARCH = args.gridsearch is not None
+GRIDSEARCH_MODE = args.gridsearch if USE_GRIDSEARCH else None
+
+if USE_GRIDSEARCH:
+    print(f"\n🔍 GridSearch Optimization: ENABLED ({GRIDSEARCH_MODE} mode)")
+    print(f"⏳ This will take longer but produce a better-optimized model\n")
+else:
+    print("\n⚡ GridSearch Optimization: DISABLED (fast training mode)")
+    print("   To enable: python multi_output_training.py --gridsearch\n")
 
 # Configure pandas and matplotlib display settings
 pd.set_option('display.max_columns', None)  # Show all columns in tables
@@ -426,6 +453,144 @@ print_multi_output_results(lgb_metrics)
 all_results.append(lgb_metrics)
 
 # =============================================================================
+# OPTIONAL: GRIDSEARCH HYPERPARAMETER OPTIMIZATION
+# =============================================================================
+
+if USE_GRIDSEARCH:
+    print("\n" + "=" * 80)
+    print(f"GRIDSEARCH HYPERPARAMETER OPTIMIZATION ({GRIDSEARCH_MODE.upper()} MODE)")
+    print("=" * 80)
+
+    # Find the current best model
+    temp_comparison = pd.DataFrame([{
+        'Model': r['model_name'],
+        'Avg_R2': (r['impressions']['test_r2'] + r['engagement']['test_r2']) / 2
+    } for r in all_results])
+    current_best_name = temp_comparison.sort_values('Avg_R2', ascending=False).iloc[0]['Model']
+    current_best_r2 = temp_comparison.sort_values('Avg_R2', ascending=False).iloc[0]['Avg_R2']
+
+    print(f"\nCurrent best model: {current_best_name} (Avg R² = {current_best_r2:.4f})")
+    print(f"Optimizing Random Forest with GridSearch to improve performance...")
+
+    # Define parameter grid based on mode
+    if GRIDSEARCH_MODE == 'quick':
+        param_grid = {
+            'n_estimators': [200, 300, 500],
+            'max_depth': [15, 20, None],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4],
+            'max_features': ['sqrt', None],
+        }
+        cv_folds = 3
+        print(f"\nQuick GridSearch - Testing {3*3*3*3*2} = 162 combinations with {cv_folds}-fold CV")
+    else:  # full
+        param_grid = {
+            'n_estimators': [100, 200, 300, 500],
+            'max_depth': [10, 15, 20, 25, None],
+            'min_samples_split': [2, 5, 10, 15],
+            'min_samples_leaf': [1, 2, 4, 8],
+            'max_features': ['sqrt', 'log2', None],
+            'bootstrap': [True, False],
+        }
+        cv_folds = 5
+        print(f"\nFull GridSearch - Testing {4*5*4*4*3*2} = 960 combinations with {cv_folds}-fold CV")
+
+    print(f"Estimated time: {'5-10 minutes' if GRIDSEARCH_MODE == 'quick' else '20-30 minutes'}")
+    print("Progress will be shown below...\n")
+
+    # Custom scorer for multi-output (average R² across both targets)
+    def multioutput_r2_scorer(estimator, X, y):
+        y_pred = estimator.predict(X)
+        r2_scores = []
+        for i in range(y.shape[1]):
+            r2_scores.append(r2_score(y[:, i], y_pred[:, i]))
+        return np.mean(r2_scores)
+
+    # Setup GridSearchCV
+    rf_base_gs = RandomForestRegressor(random_state=42, n_jobs=-1)
+    rf_model_gs = MultiOutputRegressor(rf_base_gs, n_jobs=1)
+
+    grid_search = GridSearchCV(
+        estimator=rf_model_gs,
+        param_grid={'estimator__' + k: v for k, v in param_grid.items()},
+        cv=cv_folds,
+        scoring=make_scorer(multioutput_r2_scorer),
+        n_jobs=-1,
+        verbose=2,
+        return_train_score=True
+    )
+
+    # Run GridSearch
+    print("=" * 80)
+    print("RUNNING GRIDSEARCH...")
+    print("=" * 80)
+    start_time = time.time()
+    grid_search.fit(X_train_processed_array, y_train_array)
+    elapsed_time = time.time() - start_time
+
+    print(f"\n✓ GridSearch completed in {elapsed_time/60:.1f} minutes")
+
+    # Get best model
+    best_gs_model = grid_search.best_estimator_
+
+    # Evaluate GridSearch model
+    print(f"\n{'=' * 70}")
+    print(f"GRIDSEARCH OPTIMIZED RANDOM FOREST - RESULTS")
+    print(f"{'=' * 70}")
+
+    print(f"\nBest Hyperparameters Found:")
+    for param, value in grid_search.best_params_.items():
+        print(f"  {param.replace('estimator__', '')}: {value}")
+
+    print(f"\nBest Cross-Validation R² Score: {grid_search.best_score_:.4f}")
+
+    # Evaluate on test set
+    gs_metrics, gs_trained = evaluate_multi_output_model(
+        best_gs_model, X_train_processed_array, y_train_array,
+        X_test_processed_array, y_test_array,
+        "Random Forest MultiOutput (GridSearch Optimized)"
+    )
+
+    # Add optimization metadata
+    gs_metrics['optimization_method'] = f'GridSearchCV ({GRIDSEARCH_MODE} mode, {cv_folds}-fold CV)'
+    gs_metrics['optimization_date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    gs_metrics['training_time_minutes'] = elapsed_time / 60
+    gs_metrics['best_cv_score'] = grid_search.best_score_
+    gs_metrics['best_hyperparameters'] = {k.replace('estimator__', ''): v
+                                          for k, v in grid_search.best_params_.items()}
+
+    print_multi_output_results(gs_metrics)
+
+    # Compare with baseline
+    print(f"\n{'=' * 70}")
+    print("COMPARISON: BEFORE vs AFTER GRIDSEARCH")
+    print(f"{'=' * 70}")
+    print(f"\nBefore GridSearch (Default RF):")
+    print(f"  Avg R²: {current_best_r2:.4f}")
+
+    gs_avg_r2 = (gs_metrics['impressions']['test_r2'] + gs_metrics['engagement']['test_r2']) / 2
+    print(f"\nAfter GridSearch (Optimized RF):")
+    print(f"  Avg R²: {gs_avg_r2:.4f}")
+
+    improvement = gs_avg_r2 - current_best_r2
+    improvement_pct = (improvement / current_best_r2) * 100 if current_best_r2 > 0 else 0
+
+    print(f"\nImprovement: {improvement:+.4f} ({improvement_pct:+.1f}%)")
+
+    if improvement > 0:
+        print("✓ GridSearch improved model performance!")
+        # Replace RF model with optimized version
+        rf_trained = gs_trained
+        rf_metrics = gs_metrics
+        all_results[0] = gs_metrics  # Replace first result (RF)
+        print("✓ Optimized model will be used for final comparison and saving")
+    else:
+        print("ℹ Default hyperparameters were already near-optimal")
+        print("ℹ Keeping original Random Forest model")
+
+    print(f"\nGridSearch optimization time: {elapsed_time/60:.1f} minutes")
+
+# =============================================================================
 # PART 4: MODEL COMPARISON & VISUALIZATION
 # =============================================================================
 
@@ -564,6 +729,16 @@ metadata = {
     'engagement_rate_mape': float(best_metrics['engagement_rate_mape']),
     'preprocessing': preprocessing_metadata
 }
+
+# Add GridSearch metadata if optimization was used
+if USE_GRIDSEARCH and 'optimization_method' in best_metrics:
+    metadata['optimization'] = {
+        'method': best_metrics['optimization_method'],
+        'date': best_metrics['optimization_date'],
+        'training_time_minutes': best_metrics['training_time_minutes'],
+        'best_cv_score': float(best_metrics['best_cv_score']),
+        'best_hyperparameters': best_metrics['best_hyperparameters']
+    }
 
 with open('models/multi_output_model_metadata.json', 'w') as f:
     json.dump(metadata, f, indent=2)
