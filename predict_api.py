@@ -137,10 +137,12 @@ def preprocess_features(campaign_df: pd.DataFrame, preprocessing_metadata: dict)
             value = campaign_df[cat_feature].values[0]
             # Create column name in the format: feature_value
             # Note: pd.get_dummies with drop_first=True drops the first category
-            # We need to match this behavior
+            # If the column doesn't exist, it means it's the dropped baseline category
+            # In that case, all one-hot columns for that feature should remain 0
             column_name = f"{cat_feature}_{value}"
             if column_name in expected_columns:
                 encoded_data[column_name] = 1
+            # If not in expected_columns, it's the baseline - do nothing (leave as 0)
 
         # Create DataFrame with proper column order
         df_encoded = pd.DataFrame([encoded_data])[expected_columns]
